@@ -603,20 +603,13 @@ void PrintHelp()
 "        --large-pages       ask for huge pages (needs system configuration;\n"
 "                            worth about 5%% when it works)\n"
 "        --benchmark [secs]  measure hashrate without connecting to a pool\n"
-"        --solo              mine for yourself against your own node, with
-"
-"                            no pool at all. Needs -u and a running wamd.
-"
-"        --rpc <host:port>   the node RPC address (default 127.0.0.1:9554)
-"
-"        --rpcuser <name>    RPC credentials, as in wam.conf. Omit both and
-"
-"        --rpcpassword <s>   the miner reads the node .cookie instead.
-"
-"        --rpccookie <path>  where that cookie is, if not the default
-"
-"        --network <net>     mainnet (default), testnet or regtest
-"
+"        --solo              mine for yourself against your own node, with\n"
+"                            no pool at all. Needs -u and a running wamd.\n"
+"        --rpc <host:port>   the node RPC address (default 127.0.0.1:9554)\n"
+"        --rpcuser <name>    RPC credentials, as in wam.conf. Omit both and\n"
+"        --rpcpassword <s>   the miner reads the node .cookie instead.\n"
+"        --rpccookie <path>  where that cookie is, if not the default\n"
+"        --network <net>     mainnet (default), testnet or regtest\n"
 "        --self-test         verify SHA-256, byte order, targets and RandomX\n"
 "                            against known vectors, then exit\n"
 "        --no-colour         plain output, for logs and pipes\n"
