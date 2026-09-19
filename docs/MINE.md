@@ -335,15 +335,15 @@ nothing until you find a block and then the whole 47.50 at once.
 
 How long that takes is arithmetic. If your machine is 1% of the network hash
 rate and a block comes every two minutes, you find one about every three
-hours. Measured on 2026-09-19, the network was near 356 kH/s, so:
+hours. Measured on 2026-09-20 over the last 720 blocks, the network was near
+328 kH/s -- over the last 120 it was 185 kH/s, so it moves with the hour:
 
 | your machine | share | a block about every |
 |---|---|---|
-| 2,900 H/s (a typical laptop) | 0.8% | 4 hours |
-| 3,900 H/s | 1.1% | 3 hours |
-| 6,000 H/s | 1.7% | 2 hours |
+| 2,900 H/s (a typical laptop) | 0.9% | 4 hours |
+| 3,900 H/s | 1.2% | 3 hours |
+| 6,000 H/s | 1.8% | 2 hours |
 
-Four miners are already doing this and have found 157 blocks between them.
 Read the live figures yourself at explorer.wamcoin.org rather than trusting
 this table, because the network moves and the table does not.
 
@@ -352,16 +352,72 @@ separate finder; everybody in one pool is one finder, however many people are
 behind it. That is not an argument in our favour, and it is written here
 anyway.
 
-**How, exactly.** `wam-miner` speaks stratum and nothing else -- it cannot
-talk to a node directly -- so mining alone means running a pool of your own,
-for yourself. The pool software is in this repository, it runs against your
-own node on your own machine, and you point the miner at `localhost` instead
-of at us. `docs/POOL_OPERATOR.md` is the setup guide; it is written for
-somebody serving other people, and every step of it works the same when the
-only miner is you.
+### How, exactly
 
-That is what the miner in our Discord meant by "I'm running the pool
-locally". He has 3.9 kH/s and he is finding blocks.
+> **This needs a miner newer than v0.1.9.** `--solo` and `--check` are built
+> and tested but not yet in a published download. Until they are, mining
+> alone still means running the pool software for yourself, which is what
+> `docs/POOL_OPERATOR.md` describes.
+
+You need two things running: your own node, and the miner pointed at it.
+
+**One.** Your node must be running, synced, and answering. Add one line to
+`wam.conf` if it is not there already:
+
+```
+server=1
+```
+
+and restart the node. Nothing else -- no user, no password, no pool, no
+Redis. The miner reads the same cookie file `wam-cli` reads.
+
+**Two.** Ask whether it would work, before mining anything:
+
+```
+wam-miner --check -u YOUR_ADDRESS
+```
+
+That builds a real block from your node's current template and asks the node
+whether it is valid. It hashes nothing and sends nothing, and it answers in
+about a second. If it says the node accepts the block, everything except the
+proof of work is correct: the coinbase, the treasury output, the witness
+commitment, the merkle root and the transactions.
+
+**Three.** Mine:
+
+```
+wam-miner --solo -u YOUR_ADDRESS -t 4
+```
+
+On Windows it is `wam-miner.exe`, and the rest is identical. `-t` is the
+number of threads; leave it out and the miner keeps one core free so the
+machine stays usable.
+
+If your node is on another machine, or its data directory is not the default
+one, say so:
+
+```
+wam-miner --solo -u YOUR_ADDRESS -t 4 --rpc 192.168.1.10:9554 --rpcuser USER --rpcpassword PASSWORD
+```
+
+**What it does.** It asks your node what to build, builds the block itself --
+coinbase, treasury output, witness commitment, merkle root -- hashes it, and
+hands it back to your node when it wins. The 47.50 is paid to the address you
+passed, by your own block, with nobody in between. There are no shares and no
+payouts because there is nobody to pay you: either you find a block or you do
+not.
+
+**Where your coins go.** Into the address you passed on the command line, and
+nowhere else. Check it with `--check` before you start: if you paste an
+address from another chain, or one character wrong, the miner refuses by name
+rather than mining for hours into nothing.
+
+**A found block is immature for 100 blocks** -- about three hours -- before
+you can spend it. That is a consensus rule, not a delay we added, and it is
+the same rule for our pool.
+
+That is also what the miner in our Discord meant by "I'm running the pool
+locally". He was doing it the hard way, before this existed.
 
 ## When it does not work
 
