@@ -231,31 +231,39 @@ inline Bytes AddressToScript(const std::string& address,
 
     // ---- base58check ------------------------------------------------------
     //
-    // A segwit address for some OTHER chain must be caught here, or it falls
-    // into the base58 decoder and comes back as "invalid character", which
-    // leaves the miner guessing. Pasting a Bitcoin address into a WAM miner
-    // is an ordinary mistake and deserves an ordinary answer.
-    const size_t other = lower.rfind('1');
-    if (other != std::string::npos && other >= 1 && other + 7 <= lower.size() &&
-        lower.find_first_not_of("qpzry9x8gf2tvdw0s3jn54khce6mua7l", other + 1) ==
-            std::string::npos) {
-        const std::string hrp = lower.substr(0, other);
-        std::string who = "another chain";
-        if (hrp == "bc")   who = "Bitcoin mainnet";
-        if (hrp == "tb")   who = "Bitcoin testnet";
-        if (hrp == "bcrt") who = "Bitcoin regtest";
-        if (hrp == "ltc")  who = "Litecoin";
-        throw std::runtime_error("that is a " + who + " address (prefix '" + hrp +
-                                 "'), not a WAM one. Expected '" + net.hrp + "1...'");
-    }
-
+    // TRIED BEFORE the "is this somebody else's bech32" guess, and the order
+    // is the whole point.
+    //
+    // That guess asks whether there is a '1' with only bech32 characters
+    // after it. The treasury address lower-cased is
+    // wdmmqw1dcgwz6htyjuemdce6qkkg4ragme -- it has a '1', and every character
+    // after it happens to be in the bech32 alphabet. Asked first, the guess
+    // rejected this project's own treasury address as belonging to another
+    // chain. The address test caught it on the first run.
+    //
+    // base58check decides instead of guessing: it carries a checksum, and a
+    // real bech32 address cannot survive it -- the base58 alphabet has no
+    // '0', '1', 'i' or 'l', which segwit addresses are full of. So decode
+    // first, and only describe the address if the decode fails.
     std::vector<uint8_t> raw;
-    if (!Base58Decode(address, raw)) {
-        throw std::runtime_error("the address is neither bech32 nor valid base58");
-    }
-    if (raw.size() != 25) {
-        throw std::runtime_error("a base58 address decodes to 25 bytes; this one "
-                                 "gave " + std::to_string(raw.size()));
+    const bool b58 = Base58Decode(address, raw) && raw.size() == 25;
+
+    if (!b58) {
+        const size_t other = lower.rfind('1');
+        if (other != std::string::npos && other >= 1 && other + 7 <= lower.size() &&
+            lower.find_first_not_of("qpzry9x8gf2tvdw0s3jn54khce6mua7l", other + 1) ==
+                std::string::npos) {
+            const std::string hrp = lower.substr(0, other);
+            std::string who = "another chain";
+            if (hrp == "bc")   who = "Bitcoin mainnet";
+            if (hrp == "tb")   who = "Bitcoin testnet";
+            if (hrp == "bcrt") who = "Bitcoin regtest";
+            if (hrp == "ltc")  who = "Litecoin";
+            throw std::runtime_error("that is a " + who + " address (prefix '" + hrp +
+                                     "'), not a WAM one. Expected '" + net.hrp + "1...'");
+        }
+        throw std::runtime_error("the address is neither a valid " + net.hrp +
+                                 "1... bech32 address nor valid base58check");
     }
 
     uint8_t h1[32], h2[32];
