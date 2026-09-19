@@ -844,8 +844,7 @@ int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int c
                                      std::to_string(job.height) + "-" + tag + ".hex";
             std::ofstream f(path, std::ios::binary);
             if (f) {
-                f << hex << "
-";
+                f << hex << "\n";
                 LogLine(CLR_DIM, "miner", "the block as sent is in " + path);
             }
         } catch (const std::exception& e) {

@@ -153,14 +153,10 @@ public:
         if (hashedHeader && std::memcmp(header, hashedHeader, 80) != 0) {
             throw std::runtime_error(
                 "the block does not match the work. The eighty bytes that were "
-                "hashed are
-    " + ToHex(hashedHeader, 80) +
-                "
-and rebuilding them from the same job gave
-    " +
+                "hashed are\n    " + ToHex(hashedHeader, 80) +
+                "\nand rebuilding them from the same job gave\n    " +
                 ToHex(header, 80) +
-                "
-The block is not sent: its proof of work is for the first "
+                "\nThe block is not sent: its proof of work is for the first "
                 "header and it carries the second.");
         }
 
