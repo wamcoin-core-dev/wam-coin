@@ -806,12 +806,18 @@ int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int c
             // electricity and thrown away, and the reason the node gives is
             // three words long; the bytes are the only other evidence there
             // is, and they cannot be reconstructed afterwards.
+            // The reason is the node's own words and goes into a filename, so
+            // anything that is not plainly a name is replaced rather than
+            // trusted.
+            std::string tag;
+            for (char c : reason) {
+                tag += (std::isalnum((unsigned char)c) || c == '-') ? c : '-';
+            }
             const std::string path = "wam-miner-rejected-" +
-                                     std::to_string(job.height) + "-" + reason + ".hex";
+                                     std::to_string(job.height) + "-" + tag + ".hex";
             std::ofstream f(path, std::ios::binary);
             if (f) {
-                f << hex << "
-";
+                f << hex << "\n";
                 LogLine(CLR_DIM, "miner", "the block as sent is in " + path);
             }
         } catch (const std::exception& e) {
