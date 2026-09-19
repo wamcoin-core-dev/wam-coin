@@ -41,6 +41,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <cstdlib>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -77,6 +78,49 @@ inline std::string Base64(const std::string& in)
         out += t[(v >> 6) & 63];  out += '=';
     }
     return out;
+}
+
+/**
+ * Where wamd keeps its cookie, when nobody says otherwise.
+ *
+ * bitcoin-cli finds the cookie without being told, and a miner on the same
+ * machine as its node should not be harder to start than that. These are the
+ * datadir upstream picks per platform, with WAM's name, plus the chain's own
+ * subdirectory.
+ *
+ * If the guess is wrong the miner says which path it tried, because a wrong
+ * path that names itself is a one-line fix and a wrong path that does not is
+ * an evening.
+ */
+inline std::string DefaultCookiePath(const std::string& network)
+{
+    std::string dir;
+#ifdef _WIN32
+    const char* appdata = std::getenv("APPDATA");
+    if (appdata) dir = std::string(appdata) + "\\WAM";
+#else
+    const char* home = std::getenv("HOME");
+    if (!home) return std::string();
+#ifdef __APPLE__
+    dir = std::string(home) + "/Library/Application Support/WAM";
+#else
+    dir = std::string(home) + "/.wam";
+#endif
+#endif
+    if (dir.empty()) return std::string();
+
+    const char sep =
+#ifdef _WIN32
+        '\\';
+#else
+        '/';
+#endif
+    // Mainnet lives in the datadir itself; the test chains each get a
+    // subdirectory, named by the daemon and not by us.
+    if (network == "testnet") dir += sep + std::string("testnet3");
+    else if (network == "regtest") dir += sep + std::string("regtest");
+
+    return dir + sep + std::string(".cookie");
 }
 
 class RpcClient {

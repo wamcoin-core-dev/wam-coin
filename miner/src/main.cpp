@@ -824,7 +824,15 @@ int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int c
     Info("threads  " + std::to_string(opt.threads) + " of " + std::to_string(cores) + " cores");
     Info("randomx  " + engine.Describe());
 
-    RpcClient   rpc(opt.rpcHost, opt.rpcPort, opt.rpcUser, opt.rpcPass, opt.rpcCookie);
+    // No credentials given means "you are on the same machine as the node",
+    // which is the ordinary case and should not need to be spelled out.
+    std::string cookie = opt.rpcCookie;
+    if (opt.rpcUser.empty() && cookie.empty()) {
+        cookie = DefaultCookiePath(opt.network);
+        if (!cookie.empty()) Info("auth     cookie   " + cookie);
+    }
+
+    RpcClient   rpc(opt.rpcHost, opt.rpcPort, opt.rpcUser, opt.rpcPass, cookie);
     SoloSession solo(rpc, opt.user, NetParamsFor(opt.network), "/wam-miner/");
 
     // Fail before hashing, not after. A wrong address, an unreachable node or
