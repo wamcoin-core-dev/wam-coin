@@ -45,3 +45,40 @@ plainly so nobody arrives expecting one.
 `scripts/check_post_text.py` refused the first draft: `SECURITY.md` is a
 hostname to Telegram, X and most forums, on a registry we do not control. It
 is a full URL now.
+
+---
+
+## Correction, 2026-09-19 evening: this framing was wrong
+
+Everything above about leading with the concentration figure is superseded.
+The founder set the rule after reading the four texts:
+
+> Our posts invite people. The project is transparent, nobody controls it,
+> mine with your own address. That is all they say.
+
+Why the framing above was a mistake, in his words and mine:
+
+**Repetition turns a stated rule into begging.** "No listing until the network
+balances" was published on day one, dated and public. Saying it again carries
+no information, only a tone, and the tone is fear. A man who is confident
+states his number once. Asked later why it is not listed, the answer is one
+line -- because the figure did not fall -- and the burden moves to whoever
+asked.
+
+**It invites what it fears.** Announcing that one party could rewrite the
+chain puts the idea in front of people who did not have it, including that
+party. *"Even if it was not in his mind, he will do it."*
+
+**It costs us the people already promoting us.** The other pool operator and
+others put WAM on their own pages and bring their friends, because they see
+an open project they benefit from. Publishing our anxiety about them drives
+exactly those people away.
+
+**And it misreads the miners.** People who have mined for days hold a real
+position in this chain and will defend it. They are stakeholders, not an
+audience to be rescued.
+
+What does not change: the concentration figure stays published permanently on
+the explorer. That is a commitment and it is kept. The difference is between
+a number anybody can check and a number we broadcast -- published, not
+advertised.
