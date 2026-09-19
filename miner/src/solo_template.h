@@ -327,13 +327,33 @@ inline SoloTemplate BuildSoloTemplate(const json::Value& t,
     job.nbits = (uint32_t(nbits[0]) << 24) | (uint32_t(nbits[1]) << 16) |
                 (uint32_t(nbits[2]) << 8)  |  uint32_t(nbits[3]);
 
-    job.seed = FromHex(t["randomx_seedhash"].AsString());
-    if (job.seed.size() != 32) {
+    // THE SEED ARRIVES REVERSED, and the two wires disagree about it.
+    //
+    // getblocktemplate renders randomx_seedhash the way a uint256 prints --
+    // big-endian, the order a block hash is quoted in. RandomX is keyed with
+    // the internal bytes, which are the other way round. Stratum does not have
+    // this problem: mining.set_seedhash carries the key itself, already in
+    // internal order, so the pool path takes it verbatim and this path must
+    // not.
+    //
+    // Taking the RPC value as it comes keys every VM with a seed nobody else
+    // uses. Nothing complains: the miner hashes, finds what looks like a
+    // solution, and the node answers high-hash -- so it reads as bad luck, and
+    // on a chain with real difficulty it would read as a machine that simply
+    // never finds anything. It cost an evening here, on a regtest chain whose
+    // target is half the hash space, where a wrong key still lands a block
+    // every other attempt and the failures looked intermittent.
+    //
+    // pool/lib/jobManager.js says the same thing in its own comment and has
+    // reversed it since August.
+    Bytes seedWire = FromHex(t["randomx_seedhash"].AsString());
+    if (seedWire.size() != 32) {
         throw std::runtime_error(
             "getblocktemplate returned no randomx_seedhash. Without it the "
             "miner cannot know which RandomX key this height needs, and every "
             "hash would be computed against the wrong one.");
     }
+    job.seed.assign(seedWire.rbegin(), seedWire.rend());
 
     job.extranonce1     = extranonce1;
     job.extranonce2Size = extranonce2Size;
