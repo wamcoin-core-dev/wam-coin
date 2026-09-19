@@ -728,6 +728,134 @@ void OnSignal(int)
     if (g_running) g_running->store(false);
 }
 
+// ---------------------------------------------------------------------------
+// Mining alone
+// ---------------------------------------------------------------------------
+
+/**
+ * The pool's place, taken by a node.
+ *
+ * Everything below the job is unchanged: the same workers, the same VMs, the
+ * same eighty bytes. What differs is only that work comes from
+ * getblocktemplate instead of mining.notify, and that a solution becomes a
+ * block instead of a share.
+ *
+ * There is no share difficulty here. A share is a pool's accounting device --
+ * proof you were working, so it can pay you a fraction. Alone there is
+ * nobody to prove anything to, so the only hash worth anything is one that
+ * meets the block target, and the difficulty shown is the chain's own.
+ */
+int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int cores)
+{
+    Info("solo     no pool; building blocks against " + opt.rpcHost + ":" +
+         std::to_string(opt.rpcPort));
+    Info("address  " + opt.user);
+    Info("network  " + opt.network);
+    Info("threads  " + std::to_string(opt.threads) + " of " + std::to_string(cores) + " cores");
+    Info("randomx  " + engine.Describe());
+
+    RpcClient   rpc(opt.rpcHost, opt.rpcPort, opt.rpcUser, opt.rpcPass, opt.rpcCookie);
+    SoloSession solo(rpc, opt.user, NetParamsFor(opt.network), "/wam-miner/");
+
+    // Fail before hashing, not after. A wrong address, an unreachable node or
+    // a daemon with no devfee field are all things a miner should be told
+    // immediately rather than after an hour of work that cannot be paid.
+    {
+        std::string error;
+        if (!solo.Refresh(error)) {
+            Fail(error);
+            return 1;
+        }
+        Info("node     height " + std::to_string(solo.Current().job.height - 1) +
+             ", building " + std::to_string(solo.Current().job.height));
+    }
+
+    // No share difficulty, because there are no shares.
+    //
+    // A share is a pool's accounting device: proof you were working, so it
+    // can pay you a fraction of what it earns. Alone there is nobody to prove
+    // anything to. The workers still compute a share target from this number
+    // and still report "shares" they beat, and those are ignored below --
+    // setting it absurdly high would only make the miner look idle. It is set
+    // to the chain's own difficulty so the line the miner prints means
+    // something to the person reading it.
+    state.SetDifficulty(ChainDifficulty(solo.Current().job.nbits));
+
+    state.onSolution = [&solo, &state](const StratumJob& job, const Bytes& en2,
+                                       uint32_t nonce, bool isBlock) {
+        if (!isBlock) return;          // nothing else is worth sending anywhere
+        try {
+            const std::string reason =
+                solo.Submit(job, en2, nonce, solo.Current().txs);
+            if (reason.empty()) {
+                state.accepted.fetch_add(1);
+                Good("block " + std::to_string(job.height) + " ACCEPTED by the node");
+            } else {
+                state.rejected.fetch_add(1);
+                Fail("the node rejected block " + std::to_string(job.height) +
+                     ": " + reason);
+            }
+        } catch (const std::exception& e) {
+            state.rejected.fetch_add(1);
+            Fail(std::string("could not submit the block: ") + e.what());
+        }
+    };
+
+    if (!PublishJob(engine, state, opt.threads, solo.Current().job)) return 1;
+
+    std::vector<std::thread> workers;
+    workers.reserve(size_t(opt.threads));
+    for (int i = 0; i < opt.threads; i++) {
+        workers.emplace_back(WorkerLoop, i, std::ref(engine), std::ref(state));
+    }
+
+    int64_t nextPoll  = NowMs() + opt.pollSeconds * 1000;
+    int64_t nextStats = NowMs() + 30000;
+    uint64_t lastHashes = 0;
+    int64_t  lastStatsAt = NowMs();
+
+    while (state.running.load()) {
+        const int64_t now = NowMs();
+
+        if (now >= nextPoll) {
+            nextPoll = now + opt.pollSeconds * 1000;
+            std::string error;
+            if (!solo.Refresh(error)) {
+                // A node that stops answering is not a reason to stop hashing
+                // on the job in hand: it may be restarting, and the work
+                // already done is still good for this height.
+                Warn("the node did not answer: " + error);
+            } else if (solo.WasNew()) {
+                if (!PublishJob(engine, state, opt.threads, solo.Current().job)) break;
+                state.SetDifficulty(ChainDifficulty(solo.Current().job.nbits));
+            }
+        }
+
+        if (now >= nextStats) {
+            const uint64_t hashes = state.hashes.load();
+            const double seconds  = double(now - lastStatsAt) / 1000.0;
+            const double rate     = seconds > 0 ? double(hashes - lastHashes) / seconds : 0;
+            lastHashes  = hashes;
+            lastStatsAt = now;
+            nextStats   = now + 30000;
+
+            char line[200];
+            std::snprintf(line, sizeof(line),
+                          "%.0f H/s  height %" PRId64 "  blocks found %llu  accepted %llu",
+                          rate, solo.Current().job.height,
+                          (unsigned long long)state.blocksFound.load(),
+                          (unsigned long long)state.accepted.load());
+            Info(line);
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+
+    state.running.store(false);
+    for (std::thread& t : workers) if (t.joinable()) t.join();
+    return 0;
+}
+
 int Run(int argc, char** argv)
 {
     // Before the first line is printed, and before --no-colour is read, so
@@ -915,134 +1043,6 @@ int Run(int argc, char** argv)
 }
 
 } // namespace wam
-
-// ---------------------------------------------------------------------------
-// Mining alone
-// ---------------------------------------------------------------------------
-
-/**
- * The pool's place, taken by a node.
- *
- * Everything below the job is unchanged: the same workers, the same VMs, the
- * same eighty bytes. What differs is only that work comes from
- * getblocktemplate instead of mining.notify, and that a solution becomes a
- * block instead of a share.
- *
- * There is no share difficulty here. A share is a pool's accounting device --
- * proof you were working, so it can pay you a fraction. Alone there is
- * nobody to prove anything to, so the only hash worth anything is one that
- * meets the block target, and the difficulty shown is the chain's own.
- */
-int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int cores)
-{
-    Info("solo     no pool; building blocks against " + opt.rpcHost + ":" +
-         std::to_string(opt.rpcPort));
-    Info("address  " + opt.user);
-    Info("network  " + opt.network);
-    Info("threads  " + std::to_string(opt.threads) + " of " + std::to_string(cores) + " cores");
-    Info("randomx  " + engine.Describe());
-
-    RpcClient   rpc(opt.rpcHost, opt.rpcPort, opt.rpcUser, opt.rpcPass, opt.rpcCookie);
-    SoloSession solo(rpc, opt.user, NetParamsFor(opt.network), "/wam-miner/");
-
-    // Fail before hashing, not after. A wrong address, an unreachable node or
-    // a daemon with no devfee field are all things a miner should be told
-    // immediately rather than after an hour of work that cannot be paid.
-    {
-        std::string error;
-        if (!solo.Refresh(error)) {
-            Fail(error);
-            return 1;
-        }
-        Info("node     height " + std::to_string(solo.Current().job.height - 1) +
-             ", building " + std::to_string(solo.Current().job.height));
-    }
-
-    // No share difficulty, because there are no shares.
-    //
-    // A share is a pool's accounting device: proof you were working, so it
-    // can pay you a fraction of what it earns. Alone there is nobody to prove
-    // anything to. The workers still compute a share target from this number
-    // and still report "shares" they beat, and those are ignored below --
-    // setting it absurdly high would only make the miner look idle. It is set
-    // to the chain's own difficulty so the line the miner prints means
-    // something to the person reading it.
-    state.SetDifficulty(ChainDifficulty(solo.Current().job.nbits));
-
-    state.onSolution = [&solo, &state](const StratumJob& job, const Bytes& en2,
-                                       uint32_t nonce, bool isBlock) {
-        if (!isBlock) return;          // nothing else is worth sending anywhere
-        try {
-            const std::string reason =
-                solo.Submit(job, en2, nonce, solo.Current().txs);
-            if (reason.empty()) {
-                state.accepted.fetch_add(1);
-                Good("block " + std::to_string(job.height) + " ACCEPTED by the node");
-            } else {
-                state.rejected.fetch_add(1);
-                Fail("the node rejected block " + std::to_string(job.height) +
-                     ": " + reason);
-            }
-        } catch (const std::exception& e) {
-            state.rejected.fetch_add(1);
-            Fail(std::string("could not submit the block: ") + e.what());
-        }
-    };
-
-    if (!PublishJob(engine, state, opt.threads, solo.Current().job)) return 1;
-
-    std::vector<std::thread> workers;
-    workers.reserve(size_t(opt.threads));
-    for (int i = 0; i < opt.threads; i++) {
-        workers.emplace_back(WorkerLoop, i, std::ref(engine), std::ref(state));
-    }
-
-    int64_t nextPoll  = NowMs() + opt.pollSeconds * 1000;
-    int64_t nextStats = NowMs() + 30000;
-    uint64_t lastHashes = 0;
-    int64_t  lastStatsAt = NowMs();
-
-    while (state.running.load()) {
-        const int64_t now = NowMs();
-
-        if (now >= nextPoll) {
-            nextPoll = now + opt.pollSeconds * 1000;
-            std::string error;
-            if (!solo.Refresh(error)) {
-                // A node that stops answering is not a reason to stop hashing
-                // on the job in hand: it may be restarting, and the work
-                // already done is still good for this height.
-                Warn("the node did not answer: " + error);
-            } else if (solo.WasNew()) {
-                if (!PublishJob(engine, state, opt.threads, solo.Current().job)) break;
-                state.SetDifficulty(ChainDifficulty(solo.Current().job.nbits));
-            }
-        }
-
-        if (now >= nextStats) {
-            const uint64_t hashes = state.hashes.load();
-            const double seconds  = double(now - lastStatsAt) / 1000.0;
-            const double rate     = seconds > 0 ? double(hashes - lastHashes) / seconds : 0;
-            lastHashes  = hashes;
-            lastStatsAt = now;
-            nextStats   = now + 30000;
-
-            char line[200];
-            std::snprintf(line, sizeof(line),
-                          "%.0f H/s  height %" PRId64 "  blocks found %llu  accepted %llu",
-                          rate, solo.Current().job.height,
-                          (unsigned long long)state.blocksFound.load(),
-                          (unsigned long long)state.accepted.load());
-            Info(line);
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    }
-
-    state.running.store(false);
-    for (std::thread& t : workers) if (t.joinable()) t.join();
-    return 0;
-}
 
 int main(int argc, char** argv)
 {
