@@ -174,6 +174,10 @@ void WorkerLoop(int workerId, RandomXEngine& engine, SharedState& state)
     uint64_t seenEpoch = 0;
     StratumJob job;
     uint8_t   header[80];
+    // Hoisted to live as long as `job` and `header` do: a solution is
+    // submitted from the hashing loop below, and the block a solo miner
+    // builds needs the exact extranonce these eighty bytes were built from.
+    Bytes     en2;
     Target    shareTarget{};
     Target    blockTarget{};
     uint32_t  nonce = 0;
@@ -194,7 +198,7 @@ void WorkerLoop(int workerId, RandomXEngine& engine, SharedState& state)
             if (!job.valid) { haveWork = false; continue; }
 
             // extranonce2: worker id in the top bytes so no two threads collide.
-            Bytes en2(size_t(job.extranonce2Size), 0);
+            en2.assign(size_t(job.extranonce2Size), 0);
             for (int i = 0; i < job.extranonce2Size && i < 4; i++) {
                 en2[size_t(i)] = uint8_t(uint32_t(workerId) >> (8 * (job.extranonce2Size - 1 - i)));
             }
@@ -275,6 +279,64 @@ void WorkerLoop(int workerId, RandomXEngine& engine, SharedState& state)
 
     // The engine owns every VM and frees them in its destructor, so that a
     // worker exiting mid-rotation cannot free a VM another thread is re-keying.
+}
+
+/**
+ * Make a job current: re-key RandomX if the seed moved, build the VMs on the
+ * first job, publish it, and bump the epoch the workers watch.
+ *
+ * EXTRACTED FROM client.onJob UNCHANGED, so both sources of work go through
+ * one path. Solo mining publishes jobs too, and a second copy of this would
+ * be a second place for the re-key to be forgotten -- which would make every
+ * hash after a seed rotation invalid, silently, on whichever path was missed.
+ *
+ * Returns false when the failure is fatal and the miner should stop.
+ */
+bool PublishJob(RandomXEngine& engine, SharedState& state, int threads,
+                const StratumJob& incoming)
+{
+        // Re-key before publishing: a worker must never hash a job against the
+        // previous epoch's key, which would make every share invalid.
+        std::string seedErr;
+        const Bytes previous = engine.CurrentSeed();
+        if (previous != incoming.seed) {
+            if (!previous.empty()) {
+                Warn("RandomX key rotated; rebuilding. Hashing pauses for a moment.");
+            } else {
+                Info("preparing RandomX (this takes a few seconds)...");
+            }
+            const int64_t t0 = NowMs();
+            if (!engine.SetSeed(incoming.seed, seedErr)) {
+                Fail(seedErr);
+                state.running.store(false);
+                return false;
+            }
+            Info("RandomX ready in " + std::to_string((NowMs() - t0) / 1000.0) + "s" +
+                 " (key " + ToHex(incoming.seed).substr(0, 16) + "...)");
+        }
+
+        // One VM per worker, built here rather than by the workers themselves.
+        if (!engine.VmsReady()) {
+            std::string vmErr;
+            if (!engine.CreateVms(threads, vmErr)) {
+                Fail(vmErr);
+                state.running.store(false);
+                return false;
+            }
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(state.jobMutex);
+            state.job = incoming;
+        }
+        state.jobEpoch.fetch_add(1);
+
+        char line[160];
+        std::snprintf(line, sizeof(line), "job %s  height %" PRId64 "  diff %.4g%s",
+                      incoming.jobId.c_str(), incoming.height, state.GetDifficulty(),
+                      incoming.cleanJobs ? "  (new block)" : "");
+        Job(line);
+    return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -719,47 +781,7 @@ int Run(int argc, char** argv)
     };
 
     client.onJob = [&](const StratumJob& incoming) {
-        // Re-key before publishing: a worker must never hash a job against the
-        // previous epoch's key, which would make every share invalid.
-        std::string seedErr;
-        const Bytes previous = engine.CurrentSeed();
-        if (previous != incoming.seed) {
-            if (!previous.empty()) {
-                Warn("RandomX key rotated; rebuilding. Hashing pauses for a moment.");
-            } else {
-                Info("preparing RandomX (this takes a few seconds)...");
-            }
-            const int64_t t0 = NowMs();
-            if (!engine.SetSeed(incoming.seed, seedErr)) {
-                Fail(seedErr);
-                state.running.store(false);
-                return;
-            }
-            Info("RandomX ready in " + std::to_string((NowMs() - t0) / 1000.0) + "s" +
-                 " (key " + ToHex(incoming.seed).substr(0, 16) + "...)");
-        }
-
-        // One VM per worker, built here rather than by the workers themselves.
-        if (!engine.VmsReady()) {
-            std::string vmErr;
-            if (!engine.CreateVms(opt.threads, vmErr)) {
-                Fail(vmErr);
-                state.running.store(false);
-                return;
-            }
-        }
-
-        {
-            std::lock_guard<std::mutex> lock(state.jobMutex);
-            state.job = incoming;
-        }
-        state.jobEpoch.fetch_add(1);
-
-        char line[160];
-        std::snprintf(line, sizeof(line), "job %s  height %" PRId64 "  diff %.4g%s",
-                      incoming.jobId.c_str(), incoming.height, state.GetDifficulty(),
-                      incoming.cleanJobs ? "  (new block)" : "");
-        Job(line);
+        if (!PublishJob(engine, state, opt.threads, incoming)) state.running.store(false);
     };
 
     // ---- workers ----------------------------------------------------------
