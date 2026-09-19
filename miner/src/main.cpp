@@ -670,7 +670,7 @@ void PrintHelp()
 "        --check             with --solo: build one block from the node's\n"
 "                            current template, ask the node whether it is\n"
 "                            valid, and exit. Hashes nothing. Answers\n"
-"                            \"will my block be accepted\"" in a second\n"
+"                            \"will my block be accepted\" in a second\n"
 "                            instead of after hours of mining.\n"
 "        --solo              mine for yourself against your own node, with\n"
 "                            no pool at all. Needs -u and a running wamd.\n"
