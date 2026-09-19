@@ -212,6 +212,25 @@ inline Target DifficultyToTarget(double difficulty)
 }
 
 /** nBits -> target, the compact encoding Bitcoin puts in the header. */
+/**
+ * The difficulty a set of nBits represents, for display.
+ *
+ * Bitcoin's definition: difficulty-1 target divided by this one. Computed in
+ * floating point from the compact form because it is shown to a person, never
+ * compared against a hash -- every comparison in this miner goes through
+ * MeetsTarget on the 256-bit values.
+ */
+inline double ChainDifficulty(uint32_t bits)
+{
+    const int      shift    = int(bits >> 24);
+    const double   mantissa = double(bits & 0x007fffffu);
+    if (mantissa <= 0) return 0;
+    double d = double(0x0000ffff) / mantissa;
+    for (int i = 29; i > shift; i--) d *= 256.0;
+    for (int i = shift; i > 29; i--) d /= 256.0;
+    return d;
+}
+
 inline Target BitsToTarget(uint32_t bits)
 {
     Target t;
