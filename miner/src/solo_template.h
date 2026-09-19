@@ -106,17 +106,39 @@ inline Bytes FromHex(const std::string& hex)
     return out;
 }
 
-/** BIP34 pushes the height as a minimally encoded signed script number. */
+/**
+ * BIP34's height, encoded exactly as `CScript() << nHeight` encodes it.
+ *
+ * Consensus does not compare the height as a number: it builds that script
+ * and compares BYTES against the front of the coinbase scriptSig. So this has
+ * to match CScript::push_int64, including its two special cases -- which a
+ * minimal data push alone does not:
+ *
+ *     0            OP_0            0x00
+ *     1 .. 16      OP_1 .. OP_16   0x51 .. 0x60
+ *     17 and up    a data push, little-endian, with a sign byte if the top
+ *                  bit is set
+ *
+ * Written first without the small cases, it passed a proposal on mainnet at
+ * height 3351 and was refused on a fresh regtest chain at height 1 with
+ * `bad-cb-height`. The bug could only ever appear on the first sixteen blocks
+ * of a chain -- which is exactly when nobody is watching.
+ */
 inline Bytes HeightPush(int64_t height)
 {
+    Bytes out;
+    if (height == 0) { out.push_back(0x00); return out; }            // OP_0
+    if (height >= 1 && height <= 16) {
+        out.push_back(uint8_t(0x50 + height));                       // OP_N
+        return out;
+    }
+
     Bytes n;
     int64_t v = height;
     while (v) { n.push_back(uint8_t(v & 0xff)); v >>= 8; }
     // A high bit would read as negative, so CScriptNum appends a sign byte.
-    if (!n.empty() && (n.back() & 0x80)) n.push_back(0x00);
-    if (n.empty()) n.push_back(0x00);
+    if (n.back() & 0x80) n.push_back(0x00);
 
-    Bytes out;
     out.push_back(uint8_t(n.size()));
     out.insert(out.end(), n.begin(), n.end());
     return out;
