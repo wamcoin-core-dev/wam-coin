@@ -74,6 +74,14 @@ others put WAM on their own pages and bring their friends, because they see
 an open project they benefit from. Publishing our anxiety about them drives
 exactly those people away.
 
+**And the message cancels itself.** "Come and mine" and "one party has
+produced 61% of the chain" in one post do not add up -- the second swallows
+the first. What a miner reads is: do not come, the network is not safe, we
+have been taken over, there is nothing here for you. Then he closes the page
+instead of spending electricity here. An invitation with a warning printed
+under it is not an invitation, and this is the plainest reason the framing
+was wrong.
+
 **And it misreads the miners.** People who have mined for days hold a real
 position in this chain and will defend it. They are stakeholders, not an
 audience to be rescued.
