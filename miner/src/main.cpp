@@ -34,6 +34,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 #include <ctime>
 #include <random>
 #include <string>
@@ -112,6 +113,16 @@ struct SharedState {
     std::atomic<uint64_t> rejected{0};
     std::atomic<uint64_t> blocksFound{0};
 
+    // WHERE A SOLUTION GOES, decided once at startup.
+    //
+    // A worker that has found something must not know whether this miner is
+    // talking to a pool or to a node: those are two destinations for one
+    // result, not two kinds of mining. Setting it here keeps the hot loop
+    // identical on both paths -- the loop that has produced every share since
+    // August is not the place to put a branch.
+    std::function<void(const StratumJob&, const Bytes& extranonce2,
+                       uint32_t nonce, bool isBlock)> onSolution;
+
     void SetDifficulty(double d)
     {
         uint64_t bits;
@@ -136,8 +147,7 @@ struct SharedState {
 // Worker
 // ---------------------------------------------------------------------------
 
-void WorkerLoop(int workerId, RandomXEngine& engine, SharedState& state,
-                StratumClient& client)
+void WorkerLoop(int workerId, RandomXEngine& engine, SharedState& state)
 {
     // Each worker owns a distinct extranonce2, which gives it a completely
     // separate coinbase and therefore a separate search space. Without this,
@@ -240,8 +250,7 @@ void WorkerLoop(int workerId, RandomXEngine& engine, SharedState& state,
                     }
 
                     state.submitted.fetch_add(1);
-                    client.QueueSubmit(job.jobId, job.extranonce2Hex,
-                                       ToHexBE32(job.ntime), ToHexBE32(hashedNonce));
+                    if (state.onSolution) state.onSolution(job, en2, hashedNonce, isBlock);
 
                     // Once this job is solved there is nothing left in it worth
                     // finding: any further solution is for a block already
@@ -682,6 +691,13 @@ int Run(int argc, char** argv)
 
     StratumClient client(opt.host, opt.port, opt.user, opt.pass);
 
+    // The pool path: a solution is a share, named by the job it belongs to.
+    state.onSolution = [&client](const StratumJob& job, const Bytes&,
+                                 uint32_t nonce, bool) {
+        client.QueueSubmit(job.jobId, job.extranonce2Hex,
+                           ToHexBE32(job.ntime), ToHexBE32(nonce));
+    };
+
     client.onLog   = [](const std::string& m) { Info(m); };
     client.onError = [](const std::string& m) { Fail(m); };
 
@@ -750,8 +766,7 @@ int Run(int argc, char** argv)
     std::vector<std::thread> workers;
     workers.reserve(size_t(opt.threads));
     for (int i = 0; i < opt.threads; i++) {
-        workers.emplace_back(WorkerLoop, i, std::ref(engine), std::ref(state),
-                             std::ref(client));
+        workers.emplace_back(WorkerLoop, i, std::ref(engine), std::ref(state));
     }
 
     // ---- I/O loop ---------------------------------------------------------
