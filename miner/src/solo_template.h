@@ -341,7 +341,57 @@ inline Bytes SerializeBlock(const uint8_t header[80], const Bytes& coinbase,
     return block;
 }
 
-/** coinb1 | extranonce1 | extranonce2 | coinb2 */
+/**
+ * The coinbase as the BLOCK must carry it, which is not the form its hash is
+ * taken over.
+ *
+ * A coinbase that pays a witness commitment must itself carry a witness: one
+ * stack item of 32 zero bytes, the "witness reserved value". Without it the
+ * node answers `bad-witness-nonce-size` and refuses the block -- measured,
+ * not assumed: the first block this miner ever proposed was rejected with
+ * exactly that, which is what a proposal is for.
+ *
+ * But the merkle leaf is the TXID, and a txid is the hash of the transaction
+ * WITHOUT its witness. So the two forms are both needed and must not be
+ * confused:
+ *
+ *     SerializeCoinbase()             hashed into the merkle root
+ *     SerializeCoinbaseWithWitness()  placed in the block
+ *
+ * Swapping them gives a block whose merkle root does not match its own
+ * coinbase, which no amount of hashing can fix.
+ *
+ * Segwit serialisation puts the marker and flag after the version, and the
+ * witness stack between the outputs and the locktime.
+ */
+inline Bytes SerializeCoinbaseWithWitness(const StratumJob& job,
+                                          const Bytes& extranonce2)
+{
+    if (job.coinb1.size() < 4 || job.coinb2.size() < 4) {
+        throw std::runtime_error("the coinbase halves are too short to be real");
+    }
+
+    Bytes cb;
+    cb.insert(cb.end(), job.coinb1.begin(), job.coinb1.begin() + 4);   // version
+    cb.push_back(0x00);                                                // marker
+    cb.push_back(0x01);                                                // flag
+    cb.insert(cb.end(), job.coinb1.begin() + 4, job.coinb1.end());
+    cb.insert(cb.end(), job.extranonce1.begin(), job.extranonce1.end());
+    cb.insert(cb.end(), extranonce2.begin(), extranonce2.end());
+
+    // coinb2 is nSequence | outputs | locktime; the witness goes before the
+    // locktime, which is its last four bytes.
+    cb.insert(cb.end(), job.coinb2.begin(), job.coinb2.end() - 4);
+
+    cb.push_back(0x01);                     // one stack item
+    cb.push_back(0x20);                     // of 32 bytes
+    cb.insert(cb.end(), 32, 0x00);          // the reserved value
+
+    cb.insert(cb.end(), job.coinb2.end() - 4, job.coinb2.end());       // locktime
+    return cb;
+}
+
+/** coinb1 | extranonce1 | extranonce2 | coinb2 -- the form the merkle root uses */
 inline Bytes SerializeCoinbase(const StratumJob& job, const Bytes& extranonce2)
 {
     Bytes cb;
