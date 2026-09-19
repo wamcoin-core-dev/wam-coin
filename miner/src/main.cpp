@@ -637,6 +637,7 @@ struct Options {
 
     // ---- mining alone, against your own node ----------------------------
     bool        solo = false;
+    bool        check = false;   // build one block, ask the node, exit
     std::string rpcHost = "127.0.0.1";
     uint16_t    rpcPort = 9554;
     std::string rpcUser;
@@ -666,6 +667,11 @@ void PrintHelp()
 "        --large-pages       ask for huge pages (needs system configuration;\n"
 "                            worth about 5%% when it works)\n"
 "        --benchmark [secs]  measure hashrate without connecting to a pool\n"
+"        --check             with --solo: build one block from the node's\n"
+"                            current template, ask the node whether it is\n"
+"                            valid, and exit. Hashes nothing. Answers\n"
+"                            \"will my block be accepted\"" in a second\n"
+"                            instead of after hours of mining.\n"
 "        --solo              mine for yourself against your own node, with\n"
 "                            no pool at all. Needs -u and a running wamd.\n"
 "        --rpc <host:port>   the node RPC address (default 127.0.0.1:9554)\n"
@@ -709,6 +715,7 @@ bool ParseOptions(int argc, char** argv, Options& opt, std::string& err)
         if (a == "-h" || a == "--help") { opt.help = true; return true; }
         else if (a == "--self-test")    { opt.selfTest = true; }
         else if (a == "--solo")         { opt.solo = true; }
+        else if (a == "--check")        { opt.solo = true; opt.check = true; }
         else if (a == "--rpc") {
             const char* v = needsValue(i, "--rpc");
             if (!v) return false;
@@ -831,6 +838,27 @@ int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int c
         }
         Info("node     height " + std::to_string(solo.Current().job.height - 1) +
              ", building " + std::to_string(solo.Current().job.height));
+    }
+
+    if (opt.check) {
+        const SoloTemplate& t = solo.Current();
+        Info("check    building block " + std::to_string(t.job.height) + " with " +
+             std::to_string(t.txs.size()) + " transaction(s) from the mempool");
+        try {
+            const std::string reason = solo.Propose();
+            if (!reason.empty()) {
+                Fail("the node refused the block: " + reason);
+                return 1;
+            }
+        } catch (const std::exception& e) {
+            Fail(std::string("the check could not be made: ") + e.what());
+            return 1;
+        }
+        Good("the node accepts this block. Everything except the proof of work "
+             "is correct: the coinbase, the treasury output, the witness "
+             "commitment, the merkle root and the transactions.");
+        Info("nothing was mined and nothing was submitted.");
+        return 0;
     }
 
     // No share difficulty, because there are no shares.
@@ -998,6 +1026,10 @@ int Run(int argc, char** argv)
     // path SendRaw() takes on both systems anyway.
     std::signal(SIGPIPE, SIG_IGN);
 #endif
+
+    // --check never hashes, so it must not spend a minute and two gigabytes
+    // preparing to. It is meant to answer in about a second.
+    if (opt.check) opt.fullMem = false;
 
     RandomXEngine engine;
     if (!engine.Init(opt.threads, opt.fullMem, opt.largePages, err)) {

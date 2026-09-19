@@ -102,6 +102,43 @@ public:
     const SoloTemplate& Current() const { return m_current; }
 
     /**
+     * Build a block from the current template and ask the node whether it is
+     * valid -- without hashing anything.
+     *
+     * getblocktemplate in proposal mode checks everything a block is judged
+     * on EXCEPT its proof of work: the coinbase, the treasury output, the
+     * witness commitment, the merkle root, the transactions, the height, the
+     * timestamps. So it answers the question a solo miner actually has before
+     * committing a machine to a chain for hours -- "when I do find a block,
+     * will it be accepted?" -- in about a second, and separately from whether
+     * the hashing works.
+     *
+     * A null answer means valid. Anything else is the node's own word for
+     * what is wrong.
+     */
+    std::string Propose(std::string* blockHexOut = nullptr)
+    {
+        if (!m_haveTemplate) throw std::runtime_error("there is no template to check");
+
+        const StratumJob& job = m_current.job;
+        Bytes en2(size_t(job.extranonce2Size), 0);
+
+        uint8_t header[80];
+        BuildHeader(job, en2, header);
+        WriteLE32(header + 76, 0);          // no proof of work is being claimed
+
+        const Bytes coinbase = SerializeCoinbaseWithWitness(job, en2);
+        const Bytes block    = SerializeBlock(header, coinbase, m_current.txs);
+        const std::string hex = ToHex(block);
+        if (blockHexOut) *blockHexOut = hex;
+
+        const json::Value r = m_rpc.Call(
+            "getblocktemplate",
+            "[{\"mode\":\"proposal\",\"rules\":[\"segwit\"],\"data\":\"" + hex + "\"}]");
+        return r.IsNull() ? std::string() : r.AsString("rejected");
+    }
+
+    /**
      * Hand a solved block to the node.
      *
      * `job` is the job the worker actually hashed, which may be older than
