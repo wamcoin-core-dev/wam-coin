@@ -167,6 +167,24 @@ ok "built             $OUT  ($(( $(stat -c%s "$OUT") / 1024 )) KB)"
 
 echo
 if [ "$RUN_SELF_TEST" = "1" ]; then
+    # The unit tests first, because they fail with a line number and the
+    # self-test fails with a symptom.
+    #
+    # These existed before and were run by hand, which means they were run on
+    # the day they were written. Both of the bugs solo mining shipped with --
+    # BIP34's small heights and the reversed RandomX key -- are covered by
+    # tests that were sitting in this directory, unbuilt, while a regtest chain
+    # was used to find them instead.
+    for t in "$HERE"/test/*_test.cpp; do
+        [ -f "$t" ] || continue
+        name=$(basename "$t" .cpp)
+        echo "  $name..."
+        bin="${TMPDIR:-/tmp}/wam-$name.$$"
+        "$CXX" -std=c++17 -O1 -I"$HERE/src" "$t" -o "$bin"             || fail "$name did not compile"
+        "$bin" || { rm -f "$bin"; fail "$name failed; do not use this build"; }
+        rm -f "$bin"
+    done
+
     echo "  self-test..."
     "$OUT" --self-test --no-colour || fail "the self-test failed; do not use this build"
 else
