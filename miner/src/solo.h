@@ -36,6 +36,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstring>
 #include <deque>
 #include <fstream>
 #include <mutex>
@@ -120,7 +121,8 @@ public:
      * the difference between diagnosing it and guessing.
      */
     std::string Submit(const StratumJob& job, const Bytes& extranonce2,
-                       uint32_t nonce, std::string* blockHexOut = nullptr)
+                       uint32_t nonce, const uint8_t hashedHeader[80],
+                       std::string* blockHexOut = nullptr)
     {
         std::vector<TemplateTx> txs;
         bool known = false;
@@ -140,6 +142,27 @@ public:
         uint8_t header[80];
         BuildHeader(job, extranonce2, header);
         WriteLE32(header + 76, nonce);
+
+        // The header is rebuilt here rather than carried, because the block
+        // needs the coinbase rebuilt anyway and the two must agree. Rebuilding
+        // is only safe if it reproduces the bytes the worker hashed, so that
+        // is checked rather than assumed: if they differ, the proof of work
+        // belongs to a header nobody will ever see, and the node will refuse
+        // the block with a message about the hash being too high -- which
+        // sends whoever reads it looking in entirely the wrong place.
+        if (hashedHeader && std::memcmp(header, hashedHeader, 80) != 0) {
+            throw std::runtime_error(
+                "the block does not match the work. The eighty bytes that were "
+                "hashed are
+    " + ToHex(hashedHeader, 80) +
+                "
+and rebuilding them from the same job gave
+    " +
+                ToHex(header, 80) +
+                "
+The block is not sent: its proof of work is for the first "
+                "header and it carries the second.");
+        }
 
         const Bytes coinbase = SerializeCoinbaseWithWitness(job, extranonce2);
         const Bytes block    = SerializeBlock(header, coinbase, txs);

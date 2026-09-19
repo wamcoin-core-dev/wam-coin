@@ -126,8 +126,19 @@ struct SharedState {
     // result, not two kinds of mining. Setting it here keeps the hot loop
     // identical on both paths -- the loop that has produced every share since
     // August is not the place to put a branch.
-    std::function<void(const StratumJob&, const Bytes& extranonce2,
-                       uint32_t nonce, bool isBlock)> onSolution;
+    /**
+     * Called with a solution. `hashedHeader` is the exact eighty bytes that
+     * were hashed -- handed over rather than described, so whatever sends the
+     * block can prove the bytes it is about to send are the bytes that won.
+     *
+     * Returns whether this job is finished with. A pool always is: the share
+     * is gone and the pool decides what happens next. Alone it is not, if the
+     * node refused the block -- the chain did not move, no new job is coming,
+     * and the tip is still there to be won.
+     */
+    std::function<bool(const StratumJob&, const Bytes& extranonce2,
+                       uint32_t nonce, bool isBlock,
+                       const uint8_t hashedHeader[80])> onSolution;
 
     void SetDifficulty(double d)
     {
@@ -259,14 +270,27 @@ void WorkerLoop(int workerId, RandomXEngine& engine, SharedState& state)
                                 "! hash " + ToHex(be, 32).substr(0, 24) + "...");
                     }
 
+                    // The header currently holds the NEXT nonce, because the
+                    // batch writes it before asking RandomX for the previous
+                    // one. These are the bytes that actually produced `out`.
+                    uint8_t solved[80];
+                    std::memcpy(solved, header, 80);
+                    WriteLE32(solved + 76, hashedNonce);
+
                     state.submitted.fetch_add(1);
-                    if (state.onSolution) state.onSolution(job, en2, hashedNonce, isBlock);
+                    const bool done = state.onSolution
+                                          ? state.onSolution(job, en2, hashedNonce,
+                                                             isBlock, solved)
+                                          : true;
 
                     // Once this job is solved there is nothing left in it worth
                     // finding: any further solution is for a block already
                     // submitted, and any further share is against a template
-                    // the pool is about to replace. Idle until the next job.
-                    if (isBlock) {
+                    // the pool is about to replace. Idle until the next job --
+                    // unless the block was refused, in which case the tip has
+                    // not moved and giving up would idle against a block that
+                    // is still there to be won.
+                    if (isBlock && done) {
                         state.solvedEpoch.store(seenEpoch);
                         break;
                     }
@@ -787,15 +811,17 @@ int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int c
     state.SetDifficulty(ChainDifficulty(solo.Current().job.nbits));
 
     state.onSolution = [&solo, &state](const StratumJob& job, const Bytes& en2,
-                                       uint32_t nonce, bool isBlock) {
-        if (!isBlock) return;          // nothing else is worth sending anywhere
+                                       uint32_t nonce, bool isBlock,
+                                       const uint8_t hashedHeader[80]) -> bool {
+        if (!isBlock) return false;    // nothing else is worth sending anywhere
         try {
             std::string hex;
-            const std::string reason = solo.Submit(job, en2, nonce, &hex);
+            const std::string reason =
+                solo.Submit(job, en2, nonce, hashedHeader, &hex);
             if (reason.empty()) {
                 state.accepted.fetch_add(1);
                 Good("block " + std::to_string(job.height) + " ACCEPTED by the node");
-                return;
+                return true;
             }
 
             state.rejected.fetch_add(1);
@@ -806,6 +832,7 @@ int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int c
             // electricity and thrown away, and the reason the node gives is
             // three words long; the bytes are the only other evidence there
             // is, and they cannot be reconstructed afterwards.
+            //
             // The reason is the node's own words and goes into a filename, so
             // anything that is not plainly a name is replaced rather than
             // trusted.
@@ -817,19 +844,15 @@ int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int c
                                      std::to_string(job.height) + "-" + tag + ".hex";
             std::ofstream f(path, std::ios::binary);
             if (f) {
-                f << hex << "\n";
+                f << hex << "
+";
                 LogLine(CLR_DIM, "miner", "the block as sent is in " + path);
             }
         } catch (const std::exception& e) {
             state.rejected.fetch_add(1);
             Fail(std::string("could not submit the block: ") + e.what());
         }
-
-        // The block did not land, so the chain has not moved and no new job is
-        // coming. Without this the workers stay idle at 0 H/s against a tip
-        // they could still win -- which is how the first rejection was found
-        // twice, once for the rejection and once for the silence after it.
-        state.solvedEpoch.store(0);
+        return false;              // the tip did not move; keep working on it
     };
 
     if (!PublishJob(engine, state, opt.threads, solo.Current().job)) return 1;
@@ -962,9 +985,11 @@ int Run(int argc, char** argv)
 
     // The pool path: a solution is a share, named by the job it belongs to.
     state.onSolution = [&client](const StratumJob& job, const Bytes&,
-                                 uint32_t nonce, bool) {
+                                 uint32_t nonce, bool,
+                                 const uint8_t[80]) -> bool {
         client.QueueSubmit(job.jobId, job.extranonce2Hex,
                            ToHexBE32(job.ntime), ToHexBE32(nonce));
+        return true;               // the pool decides what happens next
     };
 
     client.onLog   = [](const std::string& m) { Info(m); };
