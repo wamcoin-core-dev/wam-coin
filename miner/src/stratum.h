@@ -26,6 +26,7 @@
 // know which operating system it was compiled for: the stratum protocol does
 // not change between them.
 #include "platform.h"
+#include "sha256.h"   // BuildHeader folds the merkle branch
 
 #include <array>
 #include <deque>
@@ -95,6 +96,52 @@ inline int64_t ParseCoinbaseHeight(const Bytes& coinb1)
         height |= int64_t(coinb1[kPushLenOffset + 1 + i]) << (8 * i);
     }
     return height;
+}
+
+// ---------------------------------------------------------------------------
+// MOVED HERE FROM main.cpp, UNCHANGED.
+//
+// Solo mining builds the same StratumJob from getblocktemplate and has to
+// produce the same 80 bytes from it. Copying this function would mean two
+// versions of the one piece of code whose output must match what a pool
+// rebuilds byte for byte -- and any disagreement shows up as "share above
+// target" on every share, which reads as bad luck rather than as a bug.
+// ---------------------------------------------------------------------------
+
+/**
+ * Build the 80-byte header for a job, with the nonce left at zero.
+ *
+ * This has to reproduce, byte for byte, what the pool will rebuild when it
+ * validates the share -- see BlockTemplate.serializeHeader() in
+ * pool/lib/blockTemplate.js. Any disagreement shows up as "share above
+ * target" for every share, which looks like bad luck rather than a bug.
+ */
+void BuildHeader(const StratumJob& job, const Bytes& extranonce2, uint8_t header[80])
+{
+    // ---- coinbase = coinb1 | extranonce1 | extranonce2 | coinb2 -----------
+    Bytes coinbase;
+    coinbase.reserve(job.coinb1.size() + job.extranonce1.size() +
+                     extranonce2.size() + job.coinb2.size());
+    coinbase.insert(coinbase.end(), job.coinb1.begin(), job.coinb1.end());
+    coinbase.insert(coinbase.end(), job.extranonce1.begin(), job.extranonce1.end());
+    coinbase.insert(coinbase.end(), extranonce2.begin(), extranonce2.end());
+    coinbase.insert(coinbase.end(), job.coinb2.begin(), job.coinb2.end());
+
+    // ---- merkle root: fold the coinbase hash through the branch ----------
+    uint8_t root[32];
+    SHA256d(coinbase.data(), coinbase.size(), root);
+    for (const std::array<uint8_t, 32>& node : job.merkleBranch) {
+        uint8_t next[32];
+        SHA256dPair(root, node.data(), next);
+        std::memcpy(root, next, 32);
+    }
+
+    WriteLE32(header + 0, job.version);
+    std::memcpy(header + 4, job.prevHash, 32);
+    std::memcpy(header + 36, root, 32);
+    WriteLE32(header + 68, job.ntime);
+    WriteLE32(header + 72, job.nbits);
+    WriteLE32(header + 76, 0);                  // nonce, filled per attempt
 }
 
 class StratumClient {

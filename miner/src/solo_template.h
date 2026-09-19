@@ -354,13 +354,4 @@ inline Bytes SerializeCoinbase(const StratumJob& job, const Bytes& extranonce2)
     return cb;
 }
 
-inline std::string ToHex(const Bytes& b)
-{
-    static const char* d = "0123456789abcdef";
-    std::string s;
-    s.reserve(b.size() * 2);
-    for (uint8_t c : b) { s += d[c >> 4]; s += d[c & 15]; }
-    return s;
-}
-
 }   // namespace wam
