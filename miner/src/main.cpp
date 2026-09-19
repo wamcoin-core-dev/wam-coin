@@ -277,6 +277,34 @@ void WorkerLoop(int workerId, RandomXEngine& engine, SharedState& state)
                     std::memcpy(solved, header, 80);
                     WriteLE32(solved + 76, hashedNonce);
 
+                    // Hash the block's own bytes once more, on their own,
+                    // before anyone is told about them.
+                    //
+                    // The batch above uses RandomX's pipelined interface,
+                    // where each call returns the hash of the PREVIOUS input
+                    // while starting the next -- so the hash in hand and the
+                    // nonce in hand are one step apart by design, and getting
+                    // that pairing wrong produces a proof of work for a header
+                    // that is never sent. The node then answers "high-hash",
+                    // which reads as bad luck rather than as a bug.
+                    //
+                    // One extra hash per block found costs nothing measurable:
+                    // it happens once per block, next to a network round trip.
+                    if (isBlock) {
+                        uint8_t again[32];
+                        randomx_calculate_hash(vm, solved, 80, again);
+                        if (std::memcmp(again, out, 32) != 0) {
+                            uint8_t againBE[32];
+                            PowHashToBigEndian(again, againBE);
+                            Fail("the work does not belong to this header. The "
+                                 "batch reported " + ToHex(be, 32) +
+                                 " but hashing the header on its own gives " +
+                                 ToHex(againBE, 32) + ". The block is dropped.");
+                            state.solvedEpoch.store(0);
+                            break;
+                        }
+                    }
+
                     state.submitted.fetch_add(1);
                     const bool done = state.onSolution
                                           ? state.onSolution(job, en2, hashedNonce,
@@ -290,8 +318,14 @@ void WorkerLoop(int workerId, RandomXEngine& engine, SharedState& state)
                     // unless the block was refused, in which case the tip has
                     // not moved and giving up would idle against a block that
                     // is still there to be won.
-                    if (isBlock && done) {
-                        state.solvedEpoch.store(seenEpoch);
+                    // A found block always ends the batch, whatever the node
+                    // said: the verification above uses RandomX's one-shot
+                    // interface on this VM, which leaves the pipelined state
+                    // started by hash_first behind. The next batch begins with
+                    // its own hash_first, so ending here is what keeps the two
+                    // interfaces from being mixed on the same VM.
+                    if (isBlock) {
+                        if (done) state.solvedEpoch.store(seenEpoch);
                         break;
                     }
                 }
