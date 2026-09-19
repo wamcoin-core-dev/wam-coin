@@ -36,8 +36,12 @@
 
 #include <atomic>
 #include <cstdint>
+#include <deque>
+#include <fstream>
+#include <mutex>
 #include <random>
 #include <string>
+#include <utility>
 
 #include "rpc.h"
 #include "solo_template.h"
@@ -68,6 +72,20 @@ public:
                                                 m_extranonce1, 4);
             const bool isNew = st.prevHashHex != m_current.prevHashHex ||
                                st.job.height  != m_current.job.height;
+
+            // Every template gets its own id, height alone is not enough: the
+            // node hands out a fresh one whenever the mempool moves, and two
+            // templates at the same height carry different transactions. A
+            // worker solving the older one must be given the transactions
+            // THAT job promised, which is what the ids below are for.
+            st.job.jobId = std::to_string(st.job.height) + "." +
+                           std::to_string(++m_serial);
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                m_issued.emplace_back(st.job.jobId, st.txs);
+                while (m_issued.size() > 8) m_issued.pop_front();
+            }
+
             m_current = std::move(st);
             m_haveTemplate = true;
             m_isNew = isNew;
@@ -90,19 +108,45 @@ public:
      * everything the block needs, so it is used rather than m_current: a
      * block built from a different template than the one that was hashed
      * would have a merkle root that does not match its own header.
+     *
+     * The transactions are looked up by the job's own id for the same reason.
+     * Reaching for the CURRENT template's transactions instead builds a block
+     * whose body does not match the merkle root in its header -- rare, since
+     * it needs the mempool to move between handing out the job and solving
+     * it, and silent when it is not rare enough.
+     *
+     * `blockHexOut` receives the exact bytes sent, whatever the answer. A
+     * rejected block is a solved block thrown away; keeping what was sent is
+     * the difference between diagnosing it and guessing.
      */
     std::string Submit(const StratumJob& job, const Bytes& extranonce2,
-                       uint32_t nonce, const std::vector<TemplateTx>& txs)
+                       uint32_t nonce, std::string* blockHexOut = nullptr)
     {
+        std::vector<TemplateTx> txs;
+        bool known = false;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            for (const auto& e : m_issued) {
+                if (e.first == job.jobId) { txs = e.second; known = true; break; }
+            }
+        }
+        if (!known) {
+            throw std::runtime_error(
+                "job " + job.jobId + " is no longer held, so the transactions "
+                "it was built from are unknown. The block is not sent rather "
+                "than sent wrong.");
+        }
+
         uint8_t header[80];
         BuildHeader(job, extranonce2, header);
         WriteLE32(header + 76, nonce);
 
         const Bytes coinbase = SerializeCoinbaseWithWitness(job, extranonce2);
         const Bytes block    = SerializeBlock(header, coinbase, txs);
+        const std::string hex = ToHex(block);
+        if (blockHexOut) *blockHexOut = hex;
 
-        const json::Value r =
-            m_rpc.Call("submitblock", "[\"" + ToHex(block) + "\"]");
+        const json::Value r = m_rpc.Call("submitblock", "[\"" + hex + "\"]");
 
         // submitblock answers null when the block is accepted and a reason
         // when it is not. Both arrive down the same channel, which is why the
@@ -120,6 +164,11 @@ private:
     SoloTemplate m_current;
     bool         m_haveTemplate = false;
     bool         m_isNew        = false;
+
+    // Workers submit from their own threads, so the issued list is shared.
+    mutable std::mutex m_mutex;
+    std::deque<std::pair<std::string, std::vector<TemplateTx>>> m_issued;
+    uint64_t m_serial = 0;
 };
 
 }   // namespace wam

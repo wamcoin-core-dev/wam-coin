@@ -34,6 +34,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <functional>
 #include <ctime>
 #include <random>
@@ -102,7 +103,11 @@ struct SharedState {
     std::mutex  jobMutex;
     StratumJob  job;
     std::atomic<uint64_t> jobEpoch{0};       // bumped on every new job
-    std::atomic<uint64_t> solvedEpoch{0};    // set once a job yields a block
+    // Set once a job yields a block, which idles the workers until the next
+    // job arrives. Zero means "nothing solved": job epochs start at 1, so the
+    // value is free to carry that meaning, and a rejected block restores it
+    // rather than leaving every worker asleep on a chain that never moved.
+    std::atomic<uint64_t> solvedEpoch{0};
     std::atomic<uint64_t> difficultyBits{0}; // double, bit-cast, for lock-free reads
 
     std::atomic<bool>     running{true};
@@ -785,20 +790,40 @@ int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int c
                                        uint32_t nonce, bool isBlock) {
         if (!isBlock) return;          // nothing else is worth sending anywhere
         try {
-            const std::string reason =
-                solo.Submit(job, en2, nonce, solo.Current().txs);
+            std::string hex;
+            const std::string reason = solo.Submit(job, en2, nonce, &hex);
             if (reason.empty()) {
                 state.accepted.fetch_add(1);
                 Good("block " + std::to_string(job.height) + " ACCEPTED by the node");
-            } else {
-                state.rejected.fetch_add(1);
-                Fail("the node rejected block " + std::to_string(job.height) +
-                     ": " + reason);
+                return;
+            }
+
+            state.rejected.fetch_add(1);
+            Fail("the node rejected block " + std::to_string(job.height) +
+                 ": " + reason);
+
+            // Keep what was sent. A rejected block is work already paid for in
+            // electricity and thrown away, and the reason the node gives is
+            // three words long; the bytes are the only other evidence there
+            // is, and they cannot be reconstructed afterwards.
+            const std::string path = "wam-miner-rejected-" +
+                                     std::to_string(job.height) + "-" + reason + ".hex";
+            std::ofstream f(path, std::ios::binary);
+            if (f) {
+                f << hex << "
+";
+                LogLine(CLR_DIM, "miner", "the block as sent is in " + path);
             }
         } catch (const std::exception& e) {
             state.rejected.fetch_add(1);
             Fail(std::string("could not submit the block: ") + e.what());
         }
+
+        // The block did not land, so the chain has not moved and no new job is
+        // coming. Without this the workers stay idle at 0 H/s against a tip
+        // they could still win -- which is how the first rejection was found
+        // twice, once for the rejection and once for the silence after it.
+        state.solvedEpoch.store(0);
     };
 
     if (!PublishJob(engine, state, opt.threads, solo.Current().job)) return 1;
