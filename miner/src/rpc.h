@@ -121,13 +121,19 @@ public:
                 (msg.empty() ? "the node returned an error" : msg));
         }
 
-        const json::Value& result = root["result"];
-        if (result.IsNull() && method != "submitblock") {
-            // submitblock answers null for "accepted", which is the one place
-            // a null result is the good outcome.
-            throw std::runtime_error(method + ": the reply carried no result");
-        }
-        return result;
+        // A null result is not an error and must not be treated as one.
+        //
+        // JSON-RPC answers every successful call with both members present,
+        // and `error` above is the one that says whether it went wrong. Null
+        // is the SUCCESS value for the two calls this miner cares about most:
+        // submitblock answers null when a block is accepted, and
+        // getblocktemplate in proposal mode answers null when the block it
+        // was shown is valid.
+        //
+        // Throwing on it cost an evening: the first correctly built block
+        // this miner ever proposed was accepted by the node and reported here
+        // as "the reply carried no result".
+        return root["result"];
     }
 
 private:
