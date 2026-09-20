@@ -17,8 +17,8 @@ Updating this as promised on 23 August, now that there is a release people
 are actually running.
 
 Mainnet has been live since 2026-09-15 00:00 UTC. Measured just now: height
-3,307, best block a244fcb657bb7554179324a109a6dd25374df22f0ee4cc4ffbf47e9f60d03b41,
-47 peers.
+3,777, best block 22c695bc57aa7b89c14891de82566b92dcd5d60ea7bc45e4e935d87435b67b79,
+45 peers.
 
 What changed in this PR:
 
@@ -44,11 +44,17 @@ One value in the xbridge conf is worth a sentence, since it is not the
 default: `Confirmations=60`.
 
 The cost of reversing a confirmation is set by hashrate, not by block timing.
-WAM's network measured 228 kH/s over the last 120 blocks today, and it falls
+WAM's network measured 225 kH/s over the last 120 blocks today, and it falls
 by about half in the quiet hours of the night. A swap settled at a shallow
 depth on a chain that size is exposed for minutes, and the depth is the only
 lever that changes that. It is reviewed publicly against measured hashrate
 and comes down when the hashrate justifies it.
+
+The same reasoning runs the other way, and we publish that too: 3
+confirmations between two people for a small amount, 20 for an ordinary one,
+60 where value leaves the chain and stops being reversible. Nobody rents half
+a network to reverse a payment worth ten coins, so the 60 is for the place
+where reversing actually pays, not a number applied to everything.
 
 The docker wallet test will now find a live chain. No rush from my side --
 whenever the batch is ready.

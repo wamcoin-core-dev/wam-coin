@@ -9,13 +9,13 @@ a reason to look now rather than to ask whether they have.
 
 An update, since this has been open a few weeks.
 
-Mainnet opened on 2026-09-15 00:00 UTC. Measured at 2026-09-19T18:30:44Z:
+Mainnet opened on 2026-09-15 00:00 UTC. Measured at 2026-09-20T11:04:47Z:
 
-  height            3,307
-  peers             47
+  height            3,777
+  peers             45
   block target      120 s
   proof of work     RandomX, CPU only
-  mined so far      165,350 WAM of a 22,000,000 cap
+  mined so far      188,850 WAM of a 22,000,000 cap
 
 Electrum servers, both on mainnet, on separate machines in different
 countries and under different hosting companies:
@@ -37,7 +37,7 @@ than have it found later. `required_confirmations` is 60, where most coins in
 this file are 3.
 
 The cost of reversing a confirmation is set by hashrate, not by block timing.
-WAM's network measured 228 kH/s over the last 120 blocks today, and it falls
+WAM's network measured 225 kH/s over the last 120 blocks today, and it falls
 by about half in the quiet hours of the night -- that is rentable, and six
 confirmations on a chain this size is twelve minutes of exposure. The depth
 is the only lever that makes a deposit expensive to reverse, and it works
@@ -45,10 +45,12 @@ linearly. It is reviewed publicly against measured hashrate, the last review
 and its basis are recorded in the repository, and it comes down when the
 hashrate no longer justifies it.
 
-For ordinary wallet-to-wallet payments we publish 3, for the same reason in
-reverse: nobody rents half a network to reverse a small payment, and asking a
-person to wait for protection they already have costs them the use of the
-chain.
+The same reasoning runs the other way for small payments, and we publish that
+too: 3 confirmations between two people for a small amount, 20 for an
+ordinary one, 60 where value leaves the chain and stops being reversible, 100
+above a few thousand WAM. Nobody rents half a network to reverse a payment
+worth ten coins, so asking a person to wait for protection they already have
+costs them the use of the chain and buys them nothing.
 
 Happy to change anything in the PR that does not fit your conventions -- say
 what and I will do it.

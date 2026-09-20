@@ -63,7 +63,7 @@ What changed since 29 August is exactly the thing he could not find:
 
 | | |
 |---|---|
-| a live chain | mainnet since 2026-09-15, height 3,307, 47 peers |
+| a live chain | mainnet since 2026-09-15, height 3,777, 45 peers |
 | an identity that is not the gaming token | SLIP-0044 coin type **5718349**, SLIP-0173 prefixes wam / twam / wamrt, merged 26 August |
 | something to run | signed releases for Linux, Windows and macOS |
 | something to check it with | a public explorer, and a concentration figure published whether it flatters us or not |
@@ -106,11 +106,12 @@ Send in this order. Each stands alone -- skipping one does not break another.
 | 5 | `bisq-new.txt` | **new** PR | closed because he could not find the project; now he can |
 | 6 | `haveno-2528.txt` | comment on the closed PR | asks for nothing. Send only if the record there is worth updating |
 
-Every figure in all six was measured at 2026-09-19T18:30:44Z, except the
-hashrate in the confirmation-depth paragraphs, measured 2026-09-20. **If they
-are sent more than a day or two later, re-measure first** — height, peers and
-the mined total move, and a stale number in a public thread costs more than it
-saves. `scripts/check_post_text.py` must pass before any of them goes out.
+Every figure in all six was measured at one moment, 2026-09-20T11:04:47Z:
+height 3,777, 45 peers, 188,850 WAM mined, 225 kH/s over the last 120 blocks,
+and both Electrum servers answering at that same height. **If they are sent
+more than a day or two later, re-measure first** — a stale number in a public
+thread costs more than it saves, and two different dates inside one message
+cost more still. `scripts/check_post_text.py` must pass before any of them goes out.
 
 **The hashrate figure needs more care than the others**, because it does not
 drift, it swings: measured over the last five days it roughly doubles between

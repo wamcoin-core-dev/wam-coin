@@ -10,15 +10,15 @@ and the wait is ours, not his.
 Following up on your question about the two Electrum servers and 15.09.
 
 Mainnet opened on 2026-09-15 00:00 UTC. Both servers are on it now, not on
-testnet. Measured at 2026-09-19T18:30:44Z, chain height 3,307:
+testnet. Measured at 2026-09-20T11:04:47Z, chain height 3,777:
 
-  electrum.wamcoin.org    50001 TCP   50002 SSL   height 3,307
-  electrum2.wamcoin.org   50001 TCP   50002 SSL   height 3,307
+  electrum.wamcoin.org    50001 TCP   50002 SSL   height 3,777
+  electrum2.wamcoin.org   50001 TCP   50002 SSL   height 3,777
 
 They run on separate machines in different countries and under different
 hosting companies, so one provider failing does not take both.
 
-The chain itself, same moment: height 3,307, 47 peers, block target 120s,
+The chain itself, same moment: height 3,777, 45 peers, block target 120s,
 RandomX proof of work.
 
 The icon is in icons_original/ as you asked -- 256x256, so icons_resize.sh
@@ -29,7 +29,7 @@ than have it found later. `required_confirmations` is 60, where most coins in
 this file are 3.
 
 The cost of reversing a confirmation is set by hashrate, not by block timing.
-WAM's network measured 228 kH/s over the last 120 blocks today, and it falls
+WAM's network measured 225 kH/s over the last 120 blocks today, and it falls
 by about half in the quiet hours of the night -- that is rentable, and six
 confirmations on a chain this size is twelve minutes of exposure. The depth
 is the only lever that makes a deposit expensive to reverse, and it works
@@ -37,10 +37,12 @@ linearly. It is reviewed publicly against measured hashrate, the last review
 and its basis are recorded in the repository, and it comes down when the
 hashrate no longer justifies it.
 
-For ordinary wallet-to-wallet payments we publish 3, for the same reason in
-reverse: nobody rents half a network to reverse a small payment, and asking a
-person to wait for protection they already have costs them the use of the
-chain.
+The same reasoning runs the other way for small payments, and we publish that
+too: 3 confirmations between two people for a small amount, 20 for an
+ordinary one, 60 where value leaves the chain and stops being reversible, 100
+above a few thousand WAM. Nobody rents half a network to reverse a payment
+worth ten coins, so asking a person to wait for protection they already have
+costs them the use of the chain and buys them nothing.
 
 Nothing else is waiting on us that I know of. If anything in the PR needs
 changing, say so and I will do it.

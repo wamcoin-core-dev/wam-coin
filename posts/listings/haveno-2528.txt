@@ -22,10 +22,10 @@ For the record, since the chain now exists and this thread is where anyone
 looking will land:
 
   mainnet since     2026-09-15 00:00 UTC
-  height            3,307 at 2026-09-19T18:30:44Z
-  peers             47
+  height            3,777 at 2026-09-20T11:04:47Z
+  peers             45
   proof of work     RandomX, CPU only
-  supply            22,000,000 cap, 165,350 mined so far
+  supply            22,000,000 cap, 188,850 mined so far
 
   explorer          https://explorer.wamcoin.org
   releases          https://github.com/wam-coin-official/wam-coin/releases/tag/v0.1.9
@@ -46,7 +46,7 @@ The depth at which a WAM payment should be treated as settled is set by the
 amount, not by the kind of payment: 3 confirmations between two people for a
 small amount, 20 for an ordinary one, 60 where value leaves the chain and
 stops being reversible. The cost of reversing a confirmation is set by
-hashrate, not by block timing -- WAM measured 228 kH/s over the last 120
+hashrate, not by block timing -- WAM measured 225 kH/s over the last 120
 blocks today, which is rentable hardware, so depth is the only lever there
 is. If there is a per-coin confirmation setting on your side, 60 is the
 number we publish for it, and it is reviewed publicly against measured

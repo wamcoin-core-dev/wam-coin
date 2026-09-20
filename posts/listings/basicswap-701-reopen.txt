@@ -12,13 +12,13 @@ Add WAM Coin (WAM)
 #701 was closed on 27 August with the note "Mainnet is scheduled for
 2026-09-15". It launched on that date and has been running since.
 
-Measured at 2026-09-19T18:30:44Z:
+Measured at 2026-09-20T11:04:47Z:
 
-  height            3,307
-  peers             47
+  height            3,777
+  peers             45
   block target      120 s
   proof of work     RandomX, CPU
-  mined so far      165,350 WAM of a 22,000,000 cap
+  mined so far      188,850 WAM of a 22,000,000 cap
 
 Light wallet infrastructure, both on mainnet:
 
@@ -50,7 +50,7 @@ The depth at which a WAM payment should be treated as settled is set by the
 amount, not by the kind of payment: 3 confirmations between two people for a
 small amount, 20 for an ordinary one, 60 where value leaves the chain and
 stops being reversible. The cost of reversing a confirmation is set by
-hashrate, not by block timing -- WAM measured 228 kH/s over the last 120
+hashrate, not by block timing -- WAM measured 225 kH/s over the last 120
 blocks today, which is rentable hardware, so depth is the only lever there
 is. If there is a per-coin confirmation setting on your side, 60 is the
 number we publish for it, and it is reviewed publicly against measured
