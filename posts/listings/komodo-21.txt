@@ -32,5 +32,23 @@ Signed releases for Linux, Windows and macOS:
 
   https://github.com/wam-coin-official/wam-coin/releases/tag/v0.1.9
 
+One value in the entry is deliberately unusual, and I would rather name it
+than have it found later. `required_confirmations` is 60, where most coins in
+this file are 3.
+
+The cost of reversing a confirmation is set by hashrate, not by block timing.
+WAM's network measured 228 kH/s over the last 120 blocks today, and it falls
+by about half in the quiet hours of the night -- that is rentable, and six
+confirmations on a chain this size is twelve minutes of exposure. The depth
+is the only lever that makes a deposit expensive to reverse, and it works
+linearly. It is reviewed publicly against measured hashrate, the last review
+and its basis are recorded in the repository, and it comes down when the
+hashrate no longer justifies it.
+
+For ordinary wallet-to-wallet payments we publish 3, for the same reason in
+reverse: nobody rents half a network to reverse a small payment, and asking a
+person to wait for protection they already have costs them the use of the
+chain.
+
 Happy to change anything in the PR that does not fit your conventions -- say
 what and I will do it.

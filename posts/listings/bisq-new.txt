@@ -67,3 +67,15 @@ project is four days old and nothing is set in anybody's habits yet.
 There is no exchange listing and no price, and this project does not pay for
 listings. If that, or the altcoin policy, means the answer is still no, close
 it again and I will not push -- as last time.
+
+One thing worth stating, since it is ours to state and not yours to guess.
+
+The depth at which a WAM payment should be treated as settled is set by the
+amount, not by the kind of payment: 3 confirmations between two people for a
+small amount, 20 for an ordinary one, 60 where value leaves the chain and
+stops being reversible. The cost of reversing a confirmation is set by
+hashrate, not by block timing -- WAM measured 228 kH/s over the last 120
+blocks today, which is rentable hardware, so depth is the only lever there
+is. If there is a per-coin confirmation setting on your side, 60 is the
+number we publish for it, and it is reviewed publicly against measured
+hashrate rather than left to age.

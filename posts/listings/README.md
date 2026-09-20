@@ -106,7 +106,23 @@ Send in this order. Each stands alone -- skipping one does not break another.
 | 5 | `bisq-new.txt` | **new** PR | closed because he could not find the project; now he can |
 | 6 | `haveno-2528.txt` | comment on the closed PR | asks for nothing. Send only if the record there is worth updating |
 
-Every figure in all six was measured at 2026-09-19T18:30:44Z. **If they are
-sent more than a day or two later, re-measure first** — height, peers and the
-mined total move, and a stale number in a public thread costs more than it
+Every figure in all six was measured at 2026-09-19T18:30:44Z, except the
+hashrate in the confirmation-depth paragraphs, measured 2026-09-20. **If they
+are sent more than a day or two later, re-measure first** — height, peers and
+the mined total move, and a stale number in a public thread costs more than it
 saves. `scripts/check_post_text.py` must pass before any of them goes out.
+
+**The hashrate figure needs more care than the others**, because it does not
+drift, it swings: measured over the last five days it roughly doubles between
+the quietest hour of the night and the busiest of the morning, and it halved
+in a single day when machines were switched off. Quote it with the window it
+was measured over, and quote the low end of the day rather than the peak —
+the depths it justifies are set against the worst hour, not the best one.
+
+**Why the confirmation paragraph is there at all.** `required_confirmations`
+is 60 in our entry where most coins in those files carry 3, and
+`Confirmations=60` in the Block DX conf where the default is 0. A reviewer
+who finds an unusual number without an explanation assumes either a mistake
+or something being hidden. Naming it first, with the reason and the promise
+to lower it, turns the oddest value in the submission into the one that shows
+the work was done.

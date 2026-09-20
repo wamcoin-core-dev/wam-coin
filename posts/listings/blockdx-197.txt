@@ -40,5 +40,15 @@ x86_64 and macOS arm64, with SHA256SUMS signed by the release key:
 
   https://github.com/wam-coin-official/wam-coin/releases/tag/v0.1.9
 
+One value in the xbridge conf is worth a sentence, since it is not the
+default: `Confirmations=60`.
+
+The cost of reversing a confirmation is set by hashrate, not by block timing.
+WAM's network measured 228 kH/s over the last 120 blocks today, and it falls
+by about half in the quiet hours of the night. A swap settled at a shallow
+depth on a chain that size is exposed for minutes, and the depth is the only
+lever that changes that. It is reviewed publicly against measured hashrate
+and comes down when the hashrate justifies it.
+
 The docker wallet test will now find a live chain. No rush from my side --
 whenever the batch is ready.
