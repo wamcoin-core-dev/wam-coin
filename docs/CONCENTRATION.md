@@ -89,9 +89,12 @@ the founder's own three machines would have moved the figure by about two
 points and cost a published commitment. It was not done, and the machines were
 stopped.
 
-**Anyone accepting WAM should require depth while this lasts** — 30
-confirmations for small amounts, 100 for anything that matters, which is the
-same depth consensus already requires before a mined coin can move.
+**Anyone accepting WAM should require depth while this lasts**, and the
+depth follows the amount: 3 confirmations between two people for a small
+amount, 20 for an ordinary one, 60 for an exchange deposit, 100 for anything
+that matters -- which is the same depth consensus already requires before a
+mined coin can move. The full table, with the reasoning and the date it was
+last measured, is in docs/LISTING_PACKAGE.md.
 
 ---
 

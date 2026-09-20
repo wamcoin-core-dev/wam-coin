@@ -265,9 +265,23 @@ confirmations. In practice, that is you.
 
 | | |
 |---|---|
-| Wallet-to-wallet, ordinary amounts | 20 confirmations (40 minutes) |
+| Between two people, small amounts | 3 confirmations (6 minutes) |
+| Ordinary amounts | 20 confirmations (40 minutes) |
 | **Exchange deposits, while hashrate is low** | **60 confirmations (2 hours)** |
 | Anything above a few thousand WAM | 100 confirmations, or wait for us |
+
+**The depth follows the amount, not the ceremony.** An attack has a fixed
+cost -- renting more than half the network for that many blocks -- so it is
+only ever worth mounting against something worth more than that. Nobody rents
+fifty machines for two hours to reverse a payment worth ten coins. Asking a
+person to wait forty minutes to receive a small amount buys them nothing and
+costs them the use of the chain, which is a real cost with an imaginary
+benefit.
+
+That is also why the exchange row is the high one and stays high. An exchange
+is where value leaves this chain and becomes something irreversible, so it is
+the one place where reversing a deposit pays. WAM has no listing and no price
+today; until it does, that row is the only one with anything behind it.
 
 Confirmation counts are the one lever that works here, and they work
 linearly: doubling them doubles what an attack costs. We would rather ask
@@ -277,8 +291,19 @@ These numbers are reviewed publicly against measured hashrate rather than
 left to age. When they change, the change and its reason are published, and
 the last review date is recorded here.
 
-    Last reviewed  2026-08-29, before launch, on the basis that the network
-                   hashrate at launch is one founder's laptop and one pool.
+    Last reviewed  2026-09-20, five days after launch, against a measured
+                   network hashrate of 228 kH/s over the last 120 blocks and
+                   245 kH/s over the last 720, with seven distinct block
+                   finders and more than forty mining addresses. The figure
+                   moves by roughly a factor of two between the quietest hour
+                   of the night and the busiest of the morning, so the low
+                   end of the day is what these depths are set against.
+
+                   The previous review, 2026-08-29, was made before launch on
+                   the basis that the hashrate would be one founder's laptop
+                   and one pool. That basis no longer holds, which is why the
+                   small-amount row was added: the earlier numbers were set
+                   for a chain that had not started.
 
 **What we do on our side.** Every node we run checks itself every two
 minutes for a block that has stopped being a block —

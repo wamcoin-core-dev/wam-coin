@@ -246,8 +246,11 @@ use, not argued about afterwards.
 
 What holds the line meanwhile is confirmation depth. A reorg 60 blocks deep
 costs sixty times a reorg one block deep, which is why the published guidance
-is 20 confirmations wallet-to-wallet and 60 for an exchange deposit. When WAM
-is eventually accepted anywhere, the depth required rises with the amount.
+sets the depth by the amount rather than by the kind of payment: 3
+confirmations between two people for a small amount, 20 for an ordinary one,
+60 for an exchange deposit, 100 above a few thousand WAM. The exchange figure
+is the high one because an exchange is where value leaves this chain and
+stops being reversible.
 
 Value earned by mining brings its own defence with it. Value granted by us
 arrives alone.
