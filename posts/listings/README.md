@@ -120,6 +120,30 @@ in a single day when machines were switched off. Quote it with the window it
 was measured over, and quote the low end of the day rather than the peak —
 the depths it justifies are set against the worst hour, not the best one.
 
+## The message must not describe a change the request does not contain
+
+Checked on 2026-09-20, before any of these went out, and two of the six were
+describing work that had never been pushed:
+
+| | what the draft said | what the request actually held |
+|---|---|---|
+| KomodoPlatform/coins #21 | `required_confirmations` is 60 | it was **20** |
+| blocknetdx #197 | the entry moved to `wam--v0.1.9` | it was still **v0.1.6** |
+
+Both were last updated on 6 September, so none of the v0.1.9 work had reached
+them. A maintainer reading "60, where most coins here are 3" and then finding
+20 in the diff does not conclude that the message is out of date. He
+concludes the numbers are not to be trusted, and that is the one thing a
+project nobody has heard of cannot afford.
+
+Pushed to both branches on 2026-09-20 and verified through the GitHub API
+afterwards: #21 now shows 60, and #197 shows `wam--v0.1.9.conf` in both
+directories with the manifest entry to match. GLEEC #1975 already carried 60
+and needed nothing.
+
+**So before sending any of these, read the request's own diff, not the
+draft.** The draft says what we mean; only the diff says what is there.
+
 **Why the confirmation paragraph is there at all.** `required_confirmations`
 is 60 in our entry where most coins in those files carry 3, and
 `Confirmations=60` in the Block DX conf where the default is 0. A reviewer
