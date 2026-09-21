@@ -10,7 +10,9 @@ Rename the built programs from Bitcoin's names to WAM's.
     bitcoin-cli -> wam-cli  bitcoin-util   -> wam-util
                             bitcoin-wallet -> wam-wallet
 
-  plus  bitcoin.conf -> wam.conf,  ~/.bitcoin -> ~/.wam,  bitcoind.pid -> wamd.pid
+  plus  bitcoin.conf -> wam.conf,  bitcoind.pid -> wamd.pid, and the data
+  directory on all three platforms: ~/.wam, %LOCALAPPDATA%\WAM, and
+  ~/Library/Application Support/WAM
 
 WHY THIS IS DELICATE
 --------------------
@@ -55,6 +57,53 @@ EXACT = [
      'const char * const BITCOIN_CONF_FILENAME = "bitcoin.conf";',
      'const char * const BITCOIN_CONF_FILENAME = "wam.conf";'),
     ('src/common/args.cpp', 'return pathRet / ".bitcoin";', 'return pathRet / ".wam";'),
+
+    # THE OTHER TWO BRANCHES OF THE SAME FUNCTION.
+    #
+    # The line above was here from the beginning and the two below were not,
+    # so from the first Windows build on 12 September until v0.1.10 a WAM node
+    # stored its chain in a folder called Bitcoin:
+    #
+    #     Windows   %LOCALAPPDATA%\Bitcoin   (or %APPDATA%\Bitcoin if it existed)
+    #     macOS     ~/Library/Application Support/Bitcoin
+    #
+    # Found by reading the published binaries rather than the source, which is
+    # the only way it could have been found: the source renames Linux one line
+    # up, so it reads as done.
+    #
+    # It destroys nothing. A node opened on another chain's datadir prints
+    # "Incorrect or no genesis block found. Wrong datadir for network?" and
+    # shuts down before writing, and that was measured, not assumed. What it
+    # costs is every Windows and macOS user who also runs Bitcoin Core: their
+    # WAM node refuses to start and the message does not say -datadir.
+    #
+    # The legacy Roaming check is kept in the shape upstream wrote it, so a
+    # datadir that already exists under the WAM name is never moved.
+    ('src/common/args.cpp',
+     'fs::path legacy_path = GetSpecialFolderPath(CSIDL_APPDATA) / "Bitcoin";',
+     'fs::path legacy_path = GetSpecialFolderPath(CSIDL_APPDATA) / "WAM";'),
+    ('src/common/args.cpp',
+     'return GetSpecialFolderPath(CSIDL_LOCAL_APPDATA) / "Bitcoin";',
+     'return GetSpecialFolderPath(CSIDL_LOCAL_APPDATA) / "WAM";'),
+    ('src/common/args.cpp',
+     'return pathRet / "Library/Application Support/Bitcoin";',
+     'return pathRet / "Library/Application Support/WAM";'),
+
+    # The comment above the function names the three paths. Left saying
+    # Bitcoin, it is the thing a reader checks against, and it would say
+    # the code is still wrong.
+    ('src/common/args.cpp',
+     '//   old: C:\\Users\\Username\\AppData\\Roaming\\Bitcoin',
+     '//   old: C:\\Users\\Username\\AppData\\Roaming\\WAM'),
+    ('src/common/args.cpp',
+     '//   new: C:\\Users\\Username\\AppData\\Local\\Bitcoin',
+     '//   new: C:\\Users\\Username\\AppData\\Local\\WAM'),
+    ('src/common/args.cpp',
+     '// macOS: ~/Library/Application Support/Bitcoin',
+     '// macOS: ~/Library/Application Support/WAM'),
+    ('src/common/args.cpp',
+     '// Unix-like: ~/.bitcoin',
+     '// Unix-like: ~/.wam'),
 
     ('src/init.cpp',
      'static const char* BITCOIN_PID_FILENAME = "bitcoind.pid";',

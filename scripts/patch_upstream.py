@@ -218,6 +218,14 @@ REPLACEMENT_WAM023 = '    // Mainnet derives at WAM\'s own coin type; testnet an
 
 # WAM-024 anchors. Same reason as above: kept out of the Change so the C++
 # reads as C++.
+ANCHOR_WAM025 = (
+    'LogPrintf("Using data directory %s\\n", fs::PathToString(gArgs.GetDataDirNet()));'
+)
+
+INSERT_WAM025 = (
+    '\n    // WAM: say where the old data directory is, for the release that renamed it.\n    //\n    // Until v0.1.10 the Windows and macOS builds kept the chain in a folder\n    // called Bitcoin, because the rename that gave Linux ~/.wam did not touch\n    // the other two branches of GetDefaultDataDir. Correcting the name moves\n    // the default, so a node that upgrades opens an empty directory and a\n    // wallet that is perfectly safe looks lost.\n    //\n    // Nothing is moved automatically and nothing is adopted. A folder called\n    // Bitcoin may be Bitcoin Core\'s own, and a node that guesses wrong about\n    // somebody else\'s wallet is worse than one that says where to look.\n    //\n    // The old path is derived from the new one rather than rebuilt from the\n    // platform, which is why there is no #ifdef here: the last component is\n    // WAM on exactly the two systems this applies to, and on Linux the folder\n    // is .wam, so the test is false there and always was correct.\n    {\n        const fs::path in_use{gArgs.GetDataDirBase()};\n        if (in_use.filename() == "WAM") {\n            const fs::path previous{in_use.parent_path() / "Bitcoin"};\n            if (fs::exists(previous / "wam.conf") && !fs::exists(in_use / "blocks")) {\n                InitWarning(strprintf(_("A data directory from an earlier WAM release "\n                    "was found at %s, and this version uses %s. Nothing has been moved "\n                    "or deleted. If your chain and your wallet are in the old one, move "\n                    "its contents across, or start with -datadir=%s."),\n                    fs::PathToString(previous), fs::PathToString(in_use),\n                    fs::PathToString(previous)));\n            }\n        }\n    }\n'
+)
+
 ANCHOR_WAM024 = (
     "//! -fallbackfee default\n"
     "static const CAmount DEFAULT_FALLBACK_FEE = 0;"
@@ -1650,6 +1658,23 @@ def build_changes() -> list[Change]:
                 replacement=REPLACEMENT_WAM024,
             ),
         ]))
+
+    # -----------------------------------------------------------------------
+    changes.append(Change(
+        id="WAM-025",
+        title="Tell a Windows or macOS node where its old data directory is",
+        rationale=(
+            "Until v0.1.10 the Windows and macOS builds stored the chain in a folder called Bitcoin: %LOCALAPPDATA%\\\\Bitcoin and ~/Library/Application Support/Bitcoin. The rename that gave Linux ~/.wam changed one line of GetDefaultDataDir and left the other two branches of the same function alone, which is exactly why it went unnoticed -- the source reads as done.\\n\\nIt was found in the published binaries, not in the source, and it destroys nothing: a node opened on another chain's directory prints 'Incorrect or no genesis block found. Wrong datadir for network?' and shuts down before writing. That was measured on a throwaway chain rather than assumed. What it costs is every user on those platforms who also runs Bitcoin Core -- their WAM node refuses to start, and the message does not mention -datadir.\\n\\nrename_binaries.py now names the folder WAM on all three platforms. That moves the default, so this change exists for the other half of the problem: a node that upgrades finds an empty directory, and a wallet that is perfectly safe looks lost. It warns and names both paths.\\n\\nIt does not move or adopt anything. A folder called Bitcoin may belong to Bitcoin Core, and a node that guesses wrong about somebody else's wallet is worse than one that says where to look. The warning fires only when that folder contains a wam.conf, which Bitcoin Core never writes.\\n\\nNot consensus. It changes no block and no rule."),
+        edits=[
+            Edit(
+                file="src/init/common.cpp",
+                description="name the pre-v0.1.10 data directory if it is still there",
+                marker="WAM: say where the old data directory is",
+                insert_after=ANCHOR_WAM025,
+                insert_text=INSERT_WAM025,
+            ),
+        ],
+    ))
 
     return changes
 
