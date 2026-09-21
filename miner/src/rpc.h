@@ -85,8 +85,10 @@ inline std::string Base64(const std::string& in)
  *
  * bitcoin-cli finds the cookie without being told, and a miner on the same
  * machine as its node should not be harder to start than that. These are the
- * datadir upstream picks per platform, with WAM's name, plus the chain's own
- * subdirectory.
+ * datadirs wamd itself uses, taken from its GetDefaultDataDir and not from
+ * memory: the Windows and macOS ones were named Bitcoin until v0.1.10, and
+ * this guessed %APPDATA%\WAM, which was wrong twice over -- the wrong name
+ * and the wrong half of AppData.
  *
  * If the guess is wrong the miner says which path it tried, because a wrong
  * path that names itself is a one-line fix and a wrong path that does not is
@@ -96,8 +98,17 @@ inline std::string DefaultCookiePath(const std::string& network)
 {
     std::string dir;
 #ifdef _WIN32
-    const char* appdata = std::getenv("APPDATA");
-    if (appdata) dir = std::string(appdata) + "\\WAM";
+    // wamd keeps an existing datadir under Roaming if it finds one, and
+    // starts new ones under Local. Same order here, same reason.
+    const char* roaming = std::getenv("APPDATA");
+    const char* local   = std::getenv("LOCALAPPDATA");
+    if (roaming) {
+        const std::string legacy = std::string(roaming) + "\\WAM";
+        std::ifstream probe(legacy + "\\wam.conf");
+        if (probe) dir = legacy;
+    }
+    if (dir.empty() && local)   dir = std::string(local) + "\\WAM";
+    if (dir.empty() && roaming) dir = std::string(roaming) + "\\WAM";
 #else
     const char* home = std::getenv("HOME");
     if (!home) return std::string();
