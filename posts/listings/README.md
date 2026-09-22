@@ -14,6 +14,29 @@ opened; this is what became of them and what, if anything, is owed.
 | haveno-dex/haveno | 2528 | closed | "We only consider coins with market traction / price" — the only market condition anyone set |
 | bisq #8028, haveno #2527 | | closed | replaced by our own later PRs, no comments, not refusals |
 
+## GLEEC moved on its own, 2026-09-21 (read this before sending anything)
+
+`gleec-1975.txt` is dead. cipig did not ask us to fix the conflicts in #1975
+-- he fixed them, opened **#2034** under his own name, and added the
+coinpaprika and livecoinwatch ids that were never in our submission. He then
+pointed KomodoPlatform/coins#21 at it. A maintainer did our work for us,
+unpaid, for a coin with no price.
+
+What he asked for: some WAM to `WgsySSWQr1tRyjwj3S53XbiVz9yEUCCK9t`, so he can
+test a swap and then merge. **The address was checked against our own node --
+valid mainnet P2PKH, version byte 73.** It is not a listing fee and does not
+touch [[no-listing-fees-ever]]: a swap cannot be tested by somebody holding
+none of the coin. The amount, the wallet and the sending are the founder's,
+and the reply goes out only after the coins do.
+
+His entry matches ours field for field except one: `required_confirmations` is
+**4** where we publish **60**. That is not an error. 60 means two hours per
+swap, which is a real cost to anyone trading it, and he is balancing
+something real. `gleec-2034.txt` gives him the number and the measurement and
+leaves the decision on his side of the fence -- saying nothing would make the
+paragraph we put in every other submission worthless, and it is his users who
+carry the risk, not ours.
+
 ## The one that is our fault
 
 **GLEEC #1975.** cipig asked on 30 August: *"What about the 2 electrums? Do we
@@ -99,7 +122,7 @@ Send in this order. Each stands alone -- skipping one does not break another.
 
 | | file | where | why now |
 |---|---|---|---|
-| 1 | `gleec-1975.txt` | comment on the open PR | **overdue.** He asked whether to wait for 15.09 and nobody went back to him |
+| 1 | `gleec-2034.txt` | comment on **#2034** | he opened it himself and is waiting on WAM for the swap test. `gleec-1975.txt` is superseded |
 | 2 | `blockdx-197.txt` | comment on the open PR | the entry moved to v0.1.9, as promised in that thread in August |
 | 3 | `komodo-21.txt` | comment on the open PR | open since 29 August with zero comments — give a reviewer a reason to look |
 | 4 | `basicswap-701-reopen.txt` | **new** PR | closed for one reason, the launch date, and it has passed |

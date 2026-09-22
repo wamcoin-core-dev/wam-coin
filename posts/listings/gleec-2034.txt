@@ -1,0 +1,50 @@
+DESTINATION: a public comment on GLEEC PR #2034
+https://github.com/GLEECBTC/coins/pull/2034
+SEND: after the WAM is sent, so the first line is true when he reads it.
+REPLACES: gleec-1975.txt, which is now dead -- cipig closed the conversation
+there by doing the work himself in a new PR.
+
+WHAT HAPPENED, so the tone is right: he did not ask us to fix the conflicts
+in #1975. He fixed them, opened #2034 under his own name, and added the
+coinpaprika and livecoinwatch ids that were never in our submission. That is
+a maintainer doing our work for us, unpaid, for a coin with no price. The
+message thanks him first and asks him for nothing.
+
+THE ONE THING IT RAISES, and how: his entry sets required_confirmations to 4
+where we publish 60. It is not an error -- 60 means two hours per swap, which
+is a real cost to anyone trading it, and he is balancing something real. So
+the message gives him the number and the measurement and leaves the decision
+where it belongs. Saying nothing would make the paragraph we put in every
+other submission worthless, and it is his users who carry the risk.
+
+FILL IN BEFORE SENDING: the amount and the txid on line 5. Do not send this
+with a blank there.
+===========================================================================
+
+Thank you -- you did the work we should have done, and added the coinpaprika
+and livecoinwatch ids on top of it.
+
+Sent: ____ WAM to WgsySSWQr1tRyjwj3S53XbiVz9yEUCCK9t, txid ____________.
+Ask for more if the swap test wants it. There is plenty of it and no price on
+it, so take whatever makes the test easy.
+
+One value I would rather flag now than have you find later: the PR sets
+`required_confirmations` to 4, and the figure we publish for a platform is 60.
+
+The reason is hashrate, not block time. Mainnet is seven days old. Measured
+today it ran between 142 and 414 kH/s inside one 24-hour cycle -- it roughly
+doubles between the quiet hours of the night and the busy ones of the
+morning, and a hash rate that small is rentable. The cost of reversing a
+confirmation is set by that, so 4 confirmations is about eight minutes of
+exposure, and about four at the night low.
+
+It is your platform and your call, and I am not asking you to change it --
+only to have the number before you decide. We review it in public against
+measured hashrate rather than leaving it to age, the last review and its
+basis are in the repository, and it comes down as the network grows.
+
+For ordinary wallet-to-wallet payments we publish 3, for the opposite reason:
+nobody rents half a network to reverse a payment worth ten coins.
+
+Anything else the swap test needs -- a node to point at, an RPC endpoint, a
+third electrum -- say the word and it is there.
