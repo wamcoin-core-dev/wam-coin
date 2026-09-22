@@ -17,14 +17,21 @@ the message gives him the number and the measurement and leaves the decision
 where it belongs. Saying nothing would make the paragraph we put in every
 other submission worthless, and it is his users who carry the risk.
 
-FILL IN BEFORE SENDING: the amount and the txid on line 5. Do not send this
-with a blank there.
+THE AMOUNT IS 300 WAM, and the reason is arithmetic rather than caution:
+their minimum order size is denominated in the counter asset, and WAM has
+no price, so nobody -- not him, not us -- can work out how many WAM that
+is until he tries. The treasury accrues 1,800 WAM a day, so 300 is four
+hours of its income against the cost of being short: a day lost, a second
+message written, another reply waited for.
+
+FILL IN BEFORE SENDING: the txid on line 5. Do not send this with a blank
+there, and do not send it before the coins.
 ===========================================================================
 
 Thank you -- you did the work we should have done, and added the coinpaprika
 and livecoinwatch ids on top of it.
 
-Sent: ____ WAM to WgsySSWQr1tRyjwj3S53XbiVz9yEUCCK9t, txid ____________.
+Sent: 300 WAM to WgsySSWQr1tRyjwj3S53XbiVz9yEUCCK9t, txid ____________.
 Ask for more if the swap test wants it. There is plenty of it and no price on
 it, so take whatever makes the test easy.
 
