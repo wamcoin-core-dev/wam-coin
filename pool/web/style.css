@@ -230,3 +230,11 @@ footer {
   color: var(--muted); font-size: 12px;
   border-top: 1px solid var(--line);
 }
+
+/* The age of the data on the page. See renderFreshness in app.js: a tab that
+   has stopped fetching must say so rather than keep showing the last numbers
+   as though they were current. */
+.freshness { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.freshness.ok   { color: var(--ok); }
+.freshness.warn { color: var(--warn); }
+.freshness.bad  { color: var(--danger); font-weight: 600; }

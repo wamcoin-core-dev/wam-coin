@@ -548,6 +548,8 @@ async function refresh() {
     renderConcentration();
 
     text($('footerStatus'), `dashboard up ${duration(s.serverUptimeSec)}`);
+    lastOk = Date.now();
+    renderFreshness();
   } catch (err) {
     const pill = $('nodePill');
     pill.classList.remove('ok', 'warn');
@@ -558,6 +560,37 @@ async function refresh() {
     text(banner, `Cannot reach the dashboard server: ${err.message}`);
   }
 }
+
+
+// ---------------------------------------------------------------------------
+// HOW OLD IS WHAT YOU ARE LOOKING AT
+//
+// A page that fetches every few seconds and renders numbers has no way to
+// say that it stopped fetching. A browser freezes a background tab, a laptop
+// sleeps, a network drops -- and the last figures sit there looking current.
+// On 22 September that cost an hour: the founder watched frozen numbers while
+// the server was answering in one millisecond with data that changed on every
+// request, and nothing on the page could tell him which of the two was stuck.
+//
+// So the age of the data is on the page, it advances once a second, and it
+// turns amber and then red when it stops advancing. A frozen tab announces
+// itself instead of lying. It also costs nothing: the fetch interval is
+// unchanged, and this is arithmetic in the browser.
+// ---------------------------------------------------------------------------
+
+let lastOk = 0;
+
+function renderFreshness() {
+  const el = $('freshness');
+  if (!el) return;
+  if (!lastOk) { el.textContent = 'waiting for the first answer'; el.className = 'freshness warn'; return; }
+  const age = Math.round((Date.now() - lastOk) / 1000);
+  el.textContent = age <= 1 ? 'updated just now' : `updated ${age}s ago`;
+  el.className = 'freshness ' +
+    (age < REFRESH_MS / 400 ? 'ok' : age < REFRESH_MS / 150 ? 'warn' : 'bad');
+}
+
+setInterval(renderFreshness, 1000);
 
 refresh();
 setInterval(refresh, REFRESH_MS);
