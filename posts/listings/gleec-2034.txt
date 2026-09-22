@@ -24,14 +24,15 @@ trades in both directions without him having to come back and ask, which
 is the only failure mode that costs anything here: it costs a day. The
 treasury accrues 1,800 WAM a day, so this is seven hours of its income.
 
-FILL IN BEFORE SENDING: the txid on line 5. Do not send this with a blank
-there, and do not send it before the coins.
+SENT AND CONFIRMED 2026-09-22. The txid is filled in and the transaction
+has a confirmation on mainnet. This message is ready to post as it stands.
 ===========================================================================
 
 Thank you -- you did the work we should have done, and added the coinpaprika
 and livecoinwatch ids on top of it.
 
-Sent: 500 WAM to WgsySSWQr1tRyjwj3S53XbiVz9yEUCCK9t, txid ____________.
+Sent: 500 WAM to WgsySSWQr1tRyjwj3S53XbiVz9yEUCCK9t, txid
+ac06a7af6d87eed56fda28898e483d67b1033365f4d5f744e59ec5f80b5f0605.
 Ask for more if the swap test wants it. There is plenty of it and no price on
 it, so take whatever makes the test easy.
 
