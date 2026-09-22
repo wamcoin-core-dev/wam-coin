@@ -1,0 +1,44 @@
+THE CONFIRMATION LADDER — copy it from here, never write it from memory
+=======================================================================
+
+Claude got this wrong in three separate drafts on 2026-09-20 and 2026-09-22,
+the same way each time: it wrote "for ordinary payments we publish 3", when 3
+is for a SMALL amount and 20 is the ordinary one. The founder caught it all
+three times. So the text lives here once and gets copied.
+
+The source of truth is docs/LISTING_PACKAGE.md section 9, which also carries
+the date of the last review and the hashrate it was reviewed against. If the
+two ever disagree, that document wins and this file is stale.
+
+---------------------------------------------------------------- paste below
+
+    3    between two people, a small amount
+    20   an ordinary amount
+    60   where value leaves the chain and stops being reversible
+    100  above a few thousand WAM
+
+---------------------------------------------------------------- paste above
+
+THE TWO SENTENCES THAT GO WITH IT
+
+The depth follows the amount, not the kind of payment. An attack has a fixed
+cost -- renting more than half the network for that many blocks -- so it is
+only worth mounting against something worth more than that.
+
+The low rows exist for the reason opposite to the high one: nobody rents half
+a network to reverse a payment worth ten coins, so asking a person to wait
+buys them nothing and costs them the use of the chain.
+
+WHAT NOT TO DO
+
+Do not quote 60 on its own. A project that only ever argues for more depth is
+protecting itself; one that says where less is correct has thought about it,
+and that is the difference a reviewer reads.
+
+Do not call 3 "ordinary". That is the mistake this file exists to stop.
+
+Do not write the number without the window it was measured over. The hashrate
+behind it swings by roughly a factor of two between the quietest hour of the
+night and the busiest of the morning -- 142 to 414 kH/s inside one day on
+2026-09-21 -- so quote the low end of the day, because that is the hour the
+depths are set against.
