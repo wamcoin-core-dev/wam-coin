@@ -159,7 +159,25 @@ def rsh(host, cmd, timeout=45):
              "-o", "StrictHostKeyChecking=accept-new", f"root@{host}",
              "bash -s"],
             input=cmd.encode("utf-8"), capture_output=True, timeout=timeout)
-        return p.returncode, p.stdout.decode("utf-8", "replace")
+        out = p.stdout.decode("utf-8", "replace")
+        # KEEP stderr WHEN THERE IS NOTHING ELSE TO SAY.
+        #
+        # This returned stdout alone, so a host that did not answer produced
+        # an empty string and the card said "no answer" -- true, and useless.
+        # ssh puts every reason it has on stderr: a refused key, a closed
+        # port, a name that does not resolve, a host key that changed. On
+        # 22 September all three cards read "no answer" for an hour while the
+        # real cause was that the panel process had been running for four
+        # days and could no longer spawn ssh at all. The machines were fine
+        # and the panel could have said so in one line.
+        #
+        # stderr is used only when stdout is empty. A successful call must
+        # not have ssh's warnings pasted into the facts it parses.
+        if not out.strip():
+            err = p.stderr.decode("utf-8", "replace").strip()
+            if err:
+                return p.returncode, err
+        return p.returncode, out
     except Exception as e:
         return 255, f"{type(e).__name__}: {e}"
 
