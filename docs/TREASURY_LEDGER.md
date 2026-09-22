@@ -41,7 +41,7 @@ number, to the last decimal place.
 
 | date | amount | to | reason | txid |
 |---|---|---|---|---|
-| 2026-09-22 | **500.00000000 WAM** | `WgsySSWQr1tRyjwj3S53XbiVz9yEUCCK9t` | Coin for an atomic-swap test on GLEEC PR #2034, at the maintainer's own request. Not a listing fee: none was asked for and none was paid, and the decision to merge is his. | `ac06a7af6d87eed56fda28898e483d67b1033365f4d5f744e59ec5f80b5f0605` |
+| 2026-09-22 | **500.00000000 WAM** | `WgsySSWQr1tRyjwj3S53XbiVz9yEUCCK9t` | Coin for an atomic-swap test on GLEEC PR #2034, at the maintainer's own request. Not a listing fee: none was asked for and none was paid, and the decision to merge is his. | txid `ac06a7af6d87eed56fda28898e483d67b1033365f4d5f744e59ec5f80b5f0605` |
 
 Fee paid on that transaction: `0.00599480 WAM`, on 202 inputs and 29,974
 bytes. The treasury is paid one output per block and never consolidated, so a

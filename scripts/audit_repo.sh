@@ -375,7 +375,16 @@ if [ -d integration ]; then
         # Not a genesis hash. It may still be legitimate -- the listing package
         # quotes the genesis merkle root -- but it has to say so where it sits,
         # so a stale hash can never pass as a labelled one.
-        printf '%s' "$rest" | grep -qiE 'merkle' && continue
+        # 'merkle' was the only label this accepted, because the genesis
+        # merkle root was the only legitimate non-genesis hash in published
+        # material. The treasury ledger added a second kind on 2026-09-22:
+        # a transaction id, which has to be publishable or the promise to
+        # publish every treasury spend cannot be kept.
+        #
+        # The discipline is unchanged and is the whole point -- the word has
+        # to sit on the SAME LINE as the hash, so a hash that loses its
+        # meaning, or a stale one pasted in later, still fails.
+        printf '%s' "$rest" | grep -qiE 'merkle|txid|transaction id' && continue
         fail "$f carries ${h:0:16}..., which is neither a genesis hash nor labelled"
         INTEG=$((INTEG+1))
     # Tracked files only, not the working tree. integration/komodo/ can hold
