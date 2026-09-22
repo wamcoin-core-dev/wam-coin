@@ -266,9 +266,46 @@ confirmations. In practice, that is you.
 | | |
 |---|---|
 | Between two people, small amounts | 3 confirmations (6 minutes) |
+| **Atomic swaps, peer to peer** | **15 confirmations (about 31 minutes)** |
 | Ordinary amounts | 20 confirmations (40 minutes) |
-| **Exchange deposits, while hashrate is low** | **60 confirmations (2 hours)** |
+| **Custodial exchange deposits, while hashrate is low** | **60 confirmations (2 hours)** |
 | Anything above a few thousand WAM | 100 confirmations, or wait for us |
+
+**Why an atomic swap is not an exchange deposit, and gets its own row.** The
+two are not the same risk wearing different clothes. A custodial deposit puts
+a reversal against the exchange's whole balance, and the proceeds leave
+through withdrawals nobody can claw back. A swap is two people and one trade:
+the exposure is the size of that trade, it ends when the swap ends, and there
+is no pooled balance for anyone to drain. The depth is sized to what is
+actually at risk.
+
+The number came from measurement, and from a maintainer who tested it rather
+than argued about it. cipig ran the first WAM swap on 2026-09-22 -- 249.68
+WAM against Litecoin, completed in 10m31s at 4 confirmations -- and pointed
+out that 60 confirmations would make a swap take two hours, which the Komodo
+DeFi Framework cannot complete without changing its own source. He asked for
+under an hour, and said to budget 30 minutes for block variance.
+
+Measured over the last 1,000 blocks of mainnet, the time to accumulate N
+confirmations:
+
+| N | median | 95th percentile | worst |
+|---|---|---|---|
+| 4 | 7m29s | 16m54s | 26m18s |
+| **15** | **30m53s** | **45m47s** | 61m23s |
+| 20 | 41m18s | 56m48s | 75m18s |
+| 30 | 62m42s | 78m50s | 90m05s |
+| 60 | 2h06m | 2h20m | 2h33m |
+
+So his 30 minutes is 15 confirmations on our own data, under 46 minutes 95
+times out of 100. And 60 really is unworkable: two hours at the median.
+
+**And the two-hour limit is not an obstacle we talked our way around.** An
+atomic swap is built on time locks -- both sides lock funds with a deadline
+and get them back if it passes. A swap that runs for two hours pushes against
+those locks, so it fails more often and leaves funds in a half-finished
+state. Their limit protects the user as much as ours does. Asking them to
+raise it would have made WAM swaps the fragile ones.
 
 **The depth follows the amount, not the ceremony.** An attack has a fixed
 cost -- renting more than half the network for that many blocks -- so it is
@@ -291,7 +328,11 @@ These numbers are reviewed publicly against measured hashrate rather than
 left to age. When they change, the change and its reason are published, and
 the last review date is recorded here.
 
-    Last reviewed  2026-09-20, five days after launch, against a measured
+    Last reviewed  2026-09-22, seven days after launch, when the first real
+                   atomic swap was performed and the peer-to-peer row was
+                   added at 15 confirmations on measured data rather than on
+                   judgement. Before that: 2026-09-20, five days after
+                   launch, against a measured
                    network hashrate of 228 kH/s over the last 120 blocks and
                    245 kH/s over the last 720, with seven distinct block
                    finders and more than forty mining addresses. The figure
