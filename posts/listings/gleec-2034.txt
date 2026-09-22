@@ -51,8 +51,17 @@ only to have the number before you decide. We review it in public against
 measured hashrate rather than leaving it to age, the last review and its
 basis are in the repository, and it comes down as the network grows.
 
-For ordinary wallet-to-wallet payments we publish 3, for the opposite reason:
-nobody rents half a network to reverse a payment worth ten coins.
+The whole ladder we publish, so the 60 is read as the one row it is rather
+than a number applied to everything:
+
+    3    between two people, a small amount
+    20   an ordinary amount
+    60   where value leaves the chain and stops being reversible
+    100  above a few thousand WAM
+
+The low rows exist for the reason opposite to the high one: nobody rents half
+a network to reverse a payment worth ten coins, so asking a person to wait
+buys them nothing and costs them the use of the chain.
 
 Anything else the swap test needs -- a node to point at, an RPC endpoint, a
 third electrum -- say the word and it is there.
