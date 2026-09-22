@@ -235,15 +235,29 @@ def cmd_sign(args):
     if not wif:
         die("no key was given")
 
+    # EVERYTHING GOES DOWN STDIN, NOTHING ON THE COMMAND LINE.
+    #
+    # Two reasons, and the first one is fatal on Windows. The transaction is
+    # 29,974 bytes, which is 59,948 hex characters, and cmd.exe stops at
+    # 8,191 for the whole line -- so the earlier version of this could not
+    # run there at all. It failed with "the command line is too long" and the
+    # founder was the one who noticed.
+    #
+    # The second is worse and was invisible: the key was an argv element, so
+    # it sat in the process list where any program on the machine could read
+    # it. wam-cli -stdin takes the arguments one per line instead, which
+    # keeps the key out of argv entirely.
     cli = [args.cli, "-chain=main", "-rpcconnect=%s" % args.rpcconnect,
            "-rpcport=%d" % args.port]
     if args.rpcuser:
         cli += ["-rpcuser=%s" % args.rpcuser, "-rpcpassword=%s" % args.rpcpassword]
-    proc = subprocess.run(
-        cli + ["signrawtransactionwithkey", plan["unsignedHex"],
-               json.dumps([wif]), json.dumps(plan["prevtxs"])],
-        capture_output=True, text=True)
-    del wif
+    cli += ["-stdin", "signrawtransactionwithkey"]
+
+    payload = "\n".join([plan["unsignedHex"],
+                          json.dumps([wif]),
+                          json.dumps(plan["prevtxs"])]) + "\n"
+    proc = subprocess.run(cli, input=payload, capture_output=True, text=True)
+    del wif, payload
     if proc.returncode != 0:
         die("signing failed: %s" % (proc.stderr.strip() or proc.stdout.strip()))
 
