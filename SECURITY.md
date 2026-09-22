@@ -78,10 +78,17 @@ Check it rather than believe it, from any node:
 
     wam-cli scantxoutset start '["addr(WdMMqW1DcgWZ6HtyJuEMdce6QkKg4raGmE)"]'
 
-At height 1895 that returned 1,895 unspent outputs totalling 4,737.50 WAM, of
-which 4,487.50 were past the 100-block coinbase maturity. One output per block
-and none of them spent: the treasury has never moved a coin since block 1. It
-accrues 1,800 WAM per day.
+At height 4,989 that returned 4,788 unspent outputs totalling 11,972.49400520
+WAM. One output per block, and it accrues 1,800 WAM per day.
+
+**It has moved once.** This paragraph said "the treasury has never moved a
+coin since block 1", and that was true until 2026-09-22, when 500 WAM went to
+a GLEEC maintainer so he could run an atomic-swap test on a pull request he
+had opened and fixed himself. Not a listing fee — none was asked for and none
+was paid. Every coin that leaves the treasury is recorded with its amount, its
+reason and its transaction id in
+[docs/TREASURY_LEDGER.md](docs/TREASURY_LEDGER.md), and the balance above can
+be checked against the chain with the command above rather than believed.
 
 **The source changed, and this is the record of it.** The announcement on
 BitcoinTalk said the tiers would be paid "from the founder reserve". That

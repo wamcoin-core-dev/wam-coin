@@ -183,12 +183,28 @@ bash verify_release.sh .</code></pre>
 <h2 id="mining-alone-which-works-here">Mining alone, which works here</h2>
 <p>Most guides tell you to join a pool and stop there. At this network size you do not have to, and the chain is better if some of you do not.</p>
 <p>A pool smooths your income: you are paid for the work you submit, a little at a time, whether or not your own machine finds anything. Alone, you are paid nothing until you find a block and then the whole 47.50 at once.</p>
-<p>How long that takes is arithmetic. If your machine is 1% of the network hash rate and a block comes every two minutes, you find one about every three hours. Measured on 2026-09-19, the network was near 356 kH/s, so:</p>
-<table><tr><th>your machine</th><th>share</th><th>a block about every</th></tr><tr><td>2,900 H/s (a typical laptop)</td><td>0.8%</td><td>4 hours</td></tr><tr><td>3,900 H/s</td><td>1.1%</td><td>3 hours</td></tr><tr><td>6,000 H/s</td><td>1.7%</td><td>2 hours</td></tr></table>
-<p>Four miners are already doing this and have found 157 blocks between them. Read the live figures yourself at explorer.wamcoin.org rather than trusting this table, because the network moves and the table does not.</p>
+<p>How long that takes is arithmetic. If your machine is 1% of the network hash rate and a block comes every two minutes, you find one about every three hours. Measured on 2026-09-20 over the last 720 blocks, the network was near 328 kH/s -- over the last 120 it was 185 kH/s, so it moves with the hour:</p>
+<table><tr><th>your machine</th><th>share</th><th>a block about every</th></tr><tr><td>2,900 H/s (a typical laptop)</td><td>0.9%</td><td>4 hours</td></tr><tr><td>3,900 H/s</td><td>1.2%</td><td>3 hours</td></tr><tr><td>6,000 H/s</td><td>1.8%</td><td>2 hours</td></tr></table>
+<p>Read the live figures yourself at explorer.wamcoin.org rather than trusting this table, because the network moves and the table does not.</p>
 <p><strong>And it helps the chain more than joining us does.</strong> Every solo miner is a separate finder; everybody in one pool is one finder, however many people are behind it. That is not an argument in our favour, and it is written here anyway.</p>
-<p><strong>How, exactly.</strong> <code>wam-miner</code> speaks stratum and nothing else -- it cannot talk to a node directly -- so mining alone means running a pool of your own, for yourself. The pool software is in this repository, it runs against your own node on your own machine, and you point the miner at <code>localhost</code> instead of at us. <code>docs/POOL_OPERATOR.md</code> is the setup guide; it is written for somebody serving other people, and every step of it works the same when the only miner is you.</p>
-<p>That is what the miner in our Discord meant by "I'm running the pool locally". He has 3.9 kH/s and he is finding blocks.</p>
+<h3 id="how-exactly">How, exactly</h3>
+<blockquote><p><strong>This needs a miner newer than v0.1.9.</strong> <code>--solo</code> and <code>--check</code> are built and tested but not yet in a published download. Until they are, mining alone still means running the pool software for yourself, which is what <code>docs/POOL_OPERATOR.md</code> describes.</p></blockquote>
+<p>You need two things running: your own node, and the miner pointed at it.</p>
+<p><strong>One.</strong> Your node must be running, synced, and answering. Add one line to <code>wam.conf</code> if it is not there already:</p>
+<pre><code>server=1</code></pre>
+<p>and restart the node. Nothing else -- no user, no password, no pool, no Redis. The miner reads the same cookie file <code>wam-cli</code> reads.</p>
+<p><strong>Two.</strong> Ask whether it would work, before mining anything:</p>
+<pre><code>wam-miner --check -u YOUR_ADDRESS</code></pre>
+<p>That builds a real block from your node's current template and asks the node whether it is valid. It hashes nothing and sends nothing, and it answers in about a second. If it says the node accepts the block, everything except the proof of work is correct: the coinbase, the treasury output, the witness commitment, the merkle root and the transactions.</p>
+<p><strong>Three.</strong> Mine:</p>
+<pre><code>wam-miner --solo -u YOUR_ADDRESS -t 4</code></pre>
+<p>On Windows it is <code>wam-miner.exe</code>, and the rest is identical. <code>-t</code> is the number of threads; leave it out and the miner keeps one core free so the machine stays usable.</p>
+<p>If your node is on another machine, or its data directory is not the default one, say so:</p>
+<pre><code>wam-miner --solo -u YOUR_ADDRESS -t 4 --rpc 192.168.1.10:9554 --rpcuser USER --rpcpassword PASSWORD</code></pre>
+<p><strong>What it does.</strong> It asks your node what to build, builds the block itself -- coinbase, treasury output, witness commitment, merkle root -- hashes it, and hands it back to your node when it wins. The 47.50 is paid to the address you passed, by your own block, with nobody in between. There are no shares and no payouts because there is nobody to pay you: either you find a block or you do not.</p>
+<p><strong>Where your coins go.</strong> Into the address you passed on the command line, and nowhere else. Check it with <code>--check</code> before you start: if you paste an address from another chain, or one character wrong, the miner refuses by name rather than mining for hours into nothing.</p>
+<p><strong>A found block is immature for 100 blocks</strong> -- about three hours -- before you can spend it. That is a consensus rule, not a delay we added, and it is the same rule for our pool.</p>
+<p>That is also what the miner in our Discord meant by "I'm running the pool locally". He was doing it the hard way, before this existed.</p>
 <h2 id="when-it-does-not-work">When it does not work</h2>
 <p><strong><code>incorrect password attempt</code> in the log.</strong> There is no password. The node writes <code>&lt;datadir&gt;/.cookie</code> at startup and clients read it, so <code>wam-cli</code> needs the same <code>-datadir=</code> as the daemon. A leftover <code>wam.conf</code> carrying <code>rpcuser</code>/<code>rpcpassword</code> fights the cookie; delete those two lines.</p>
 <p><strong><code>accepted</code> stays at 0.</strong> Usually the wrong address format — it must start with <code>wam1</code>. An address beginning <code>twam1</code> belongs to the test chain and the pool refuses it.</p>
