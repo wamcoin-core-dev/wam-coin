@@ -8,13 +8,32 @@ opened; this is what became of them and what, if anything, is owed.
 | satoshilabs/slips | 2051 | **merged** | coin type 5718349 and prefixes wam/twam/wamrt, 26 August |
 | blocknetdx/blockchain-configuration-files | 197 | **open** | tryiou is folding it into a cleanup batch and said he will bump us |
 | KomodoPlatform/coins | 21 | **open** | no comments at all since 29 August |
-| GLEECBTC/coins | 1975 | **open** | **waiting on us** — see below |
+| GLEECBTC/coins | 1975 → **2034** | **MERGED 2026-09-22** | cipig fixed the conflicts himself, opened #2034, ran the first WAM swap and merged it. WAM is live on dex.gleec.com. #1975 closed as superseded |
 | basicswap/basicswap | 701 | closed | "Mainnet is scheduled for 2026-09-15" — a deferral, not a refusal |
 | bisq-network/bisq | 8030 | closed | he could not find the project — only the BEP-20 gaming token — and the ticker conflicts with it |
 | haveno-dex/haveno | 2528 | closed | "We only consider coins with market traction / price" — the only market condition anyone set |
 | bisq #8028, haveno #2527 | | closed | replaced by our own later PRs, no comments, not refusals |
 
-## GLEEC moved on its own, 2026-09-21 (read this before sending anything)
+## GLEEC is done — merged 2026-09-22, and WAM is live on dex.gleec.com
+
+**The first listing this project has ever had, and it is non-custodial.** WAM
+appears in the assets list at dex.gleec.com between Venice Token and Waves,
+with no price beside it while Waves shows $0.28 and Worldcoin $0.46. That is
+not an oversight.
+
+What happened, in order: cipig fixed the conflicts in #1975 himself rather
+than asking us to, opened **#2034** under his own name, added the coinpaprika
+and livecoinwatch ids nobody had asked for, requested coin for a swap test,
+ran the first WAM swap ever — 249.68 WAM against Litecoin, completed in
+10m31s — argued the confirmation depth down from 60 on measured grounds, set
+it to 15, merged, and closed #1975 as superseded.
+
+No listing fee was asked for and none was paid. 500 WAM went to him for the
+swap test, at his request, recorded in docs/TREASURY_LEDGER.md with its txid.
+
+`gleec-2034.txt` was the reply and it has been sent. `gleec-1975.txt` is dead.
+
+## How it got there (kept for the next one)
 
 `gleec-1975.txt` is dead. cipig did not ask us to fix the conflicts in #1975
 -- he fixed them, opened **#2034** under his own name, and added the
