@@ -1,0 +1,90 @@
+REPLY TO dang150296 -- Discord #general-chat
+============================================
+
+Five messages, posted in order, one after the other. Each stands on its own
+if a conversation interrupts between them.
+
+Rules this text obeys:
+  * no date is promised for anything
+  * the security reviewer is not named -- if he wants to be known he speaks
+  * no "the next Bitcoin", no ranking against Monero or Bitcoin
+  * the swap rate is attributed to the person who set it, with the PR to read
+
+--------------------------------------------------------------- 1 of 5
+
+A few people are reading the Gleec swap as a price. It is worth saying
+exactly what happened, because the whole thing is public and anyone can check
+it line by line.
+
+A maintainer at Gleec asked for some WAM so he could test that swaps work at
+all -- somebody holding none of a coin cannot trade it against anything. We
+sent it. He then set the rate himself and ran the trade. We were not asked for
+a number and we did not suggest one. The entire exchange is a public pull
+request: GLEECBTC/coins#2034. Open it and read every line between us.
+
+The 500 WAM is recorded in docs/TREASURY_LEDGER.md with its transaction id,
+and you can check it against your own node rather than believe it. No listing
+fee was asked for and none was paid.
+
+--------------------------------------------------------------- 2 of 5
+
+On who sets a price: not us.
+
+A founder who announces what his coin is worth is telling you the number is
+his to decide, and if it is his to decide then it is his to change. That is
+the opposite of what this project is for. The price of WAM is whatever two
+people who do not know each other agree on, and nothing said in this channel
+by me or anyone else makes it a different number.
+
+This is not modesty and it is not a dodge. It is what decentralisation means
+when it costs something. Anyone can run a node. Anyone can mine. Anyone can
+read the ledger. The same rule that stops me from printing coins stops me from
+setting a price, and a project that would break the second one has already
+told you what it would do with the first.
+
+--------------------------------------------------------------- 3 of 5
+
+On what WAM actually is, since it keeps being asked:
+
+It is Bitcoin's code and Bitcoin's economics -- a fixed cap of 22,000,000, a
+halving, one transparent ledger anyone can audit from their own node -- with
+the proof of work swapped for RandomX, which is Monero's. The lineage is
+borrowed rather than invented, and saying so is more useful than a slogan.
+
+What that changes is who gets to take part. Nobody mines Bitcoin on a home
+machine any more. On WAM the computer you are reading this on is a real miner
+today, and the network is still small enough that one person's machine moves
+it. RandomX is Monero's work and CPU mining is not our idea -- what differs
+there is that WAM's ledger is open where Monero's is private by design, and
+WAM's supply ends where Monero's emits forever. Different answers to
+different problems, not a better version of either.
+
+--------------------------------------------------------------- 4 of 5
+
+On what gives a coin a reason to exist beyond being mined and sold -- that was
+the real question, and there is one answer I can point at instead of promise.
+
+A security reviewer read this code, found real problems, and agreed to be paid
+in WAM rather than in dollars or bitcoin. He is in this channel, so that is
+checkable rather than a claim. That is the coin being used as money for work
+that had a price, and nobody arranged it to look good.
+
+It is owed and it is not yet paid. When it is paid, the amount and the
+transaction id go on the public record the same way the 500 WAM did. Two
+accepted findings are listed in SECURITY.md with their amounts and the reason
+for each amount, including the one where we argued ourselves down to a lower
+tier and wrote out why.
+
+--------------------------------------------------------------- 5 of 5
+
+Last thing, and it is an invitation rather than an answer.
+
+Questions like this one deserve more than a paragraph typed at midnight. I
+would rather set aside a day for it -- voice if people want to talk, written
+if they would rather read -- where the awkward questions get asked in front of
+everyone instead of in fragments across a channel. Supply, the treasury, what
+the founder can and cannot do, what happens if I disappear. Bring the ones you
+think will be dodged.
+
+If you want that, say so here and we will fix a time that works for the people
+who actually show up rather than the one that suits me.
