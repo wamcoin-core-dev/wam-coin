@@ -517,6 +517,22 @@ class ShareProcessor extends EventEmitter {
                 `payment run postponed: wallet holds ${(walletBalance / COIN).toFixed(8)} WAM ` +
                 `but ${((batchTotal + reserve) / COIN).toFixed(8)} WAM is due in this batch. ` +
                 'This is normal if blocks are still maturing.');
+            // Say so where something other than a log reader can see it.
+            //
+            // A postponement and a stoppage look identical from outside: owed
+            // climbs, the last payment ages, and nothing is paid. They are not
+            // the same fault -- one is the wallet waiting on 100 confirmations
+            // and the other is payments broken -- and a monitor that cannot
+            // tell them apart reports the safe one as an emergency until the
+            // operator learns to ignore the colour red. The pool is the only
+            // party that knows the reason, so it publishes it.
+            await this.redis.set(this.k('payment:postponed'), JSON.stringify({
+                at: Date.now(),
+                held: walletBalance,
+                due: batchTotal + reserve,
+                shortfall: (batchTotal + reserve) - walletBalance,
+                recipients: batch.length
+            }));
             return;
         }
 
@@ -577,6 +593,9 @@ class ShareProcessor extends EventEmitter {
         // survives, so did the deduction, and if neither did the intent record
         // is still there to be found.
         pipe.del(this.k('payment:inflight'));
+        // A run that paid clears the postponement: the record means "the last
+        // run did not pay, and here is why", never "it once did not pay".
+        pipe.del(this.k('payment:postponed'));
         await pipe.exec();
 
         this.log.info(`payment sent, txid ${txid}`);
@@ -642,7 +661,7 @@ class ShareProcessor extends EventEmitter {
         // count are two different questions and the bug was answering the
         // second with the first.
         const [confirmed, confirmedTotal, orphaned, orphanedTotal,
-               payments, balances, paid, fees, pendingRaw] =
+               payments, balances, paid, fees, pendingRaw, postponedRaw] =
             await Promise.all([
                 this.redis.lrange(this.k('blocks:confirmed'), 0, 4999),
                 this.redis.llen(this.k('blocks:confirmed')),
@@ -652,7 +671,8 @@ class ShareProcessor extends EventEmitter {
                 this.redis.hgetall(this.k('balances')),
                 this.redis.hgetall(this.k('paid')),
                 this.redis.get(this.k('poolfees')),
-                this.redis.hgetall(this.k('blocks:pending'))
+                this.redis.hgetall(this.k('blocks:pending')),
+                this.redis.get(this.k('payment:postponed'))
             ]);
 
         const parse = (arr) => arr.map((s) => { try { return JSON.parse(s); } catch { return null; } })
@@ -687,7 +707,13 @@ class ShareProcessor extends EventEmitter {
             recentBlocks: confirmedBlocks.slice(0, 25).map(summariseBlock),
             pendingBlocks: pendingBlocks.map(summariseBlock),
             orphanedBlocks: parse(orphaned).map(summariseBlock),
-            recentPayments: parse(payments)
+            recentPayments: parse(payments),
+            // null when the last run paid. An object when it did not, carrying
+            // the two numbers that decide whether that is normal.
+            paymentPostponed: (() => {
+                try { return postponedRaw ? JSON.parse(postponedRaw) : null; }
+                catch { return null; }
+            })()
         };
     }
 

@@ -308,10 +308,38 @@ def main():
 
         # Owed above the threshold with payments stopped is the same failure
         # arriving more slowly.
+        #
+        # But a pool that refuses to send a batch its wallet cannot cover is
+        # doing the right thing, and from outside it is indistinguishable from
+        # one that is broken: both show owed climbing and the last payment
+        # ageing. The pool now publishes which of the two it is, so this reads
+        # that instead of guessing from the clock. A monitor that calls the
+        # safe case an emergency teaches the operator to ignore it.
         if payments:
             newest = max(p.get("time", 0) for p in payments) / 1000.0
             age = time.time() - newest
-            if owed >= minimum > 0 and age > args.payout_interval * 3:
+            late = owed >= minimum > 0 and age > args.payout_interval * 3
+            pp = pool.get("paymentPostponed") or None
+
+            if late and pp:
+                pp_age = time.time() - (pp.get("at", 0) / 1000.0)
+                held = pp.get("held", 0) / COIN
+                due = pp.get("due", 0) / COIN
+                short = pp.get("shortfall", 0) / COIN
+                # A postponement record older than the payout interval is stale:
+                # the pool should have tried again and either paid or postponed
+                # afresh. If it did neither, the run itself is not happening.
+                if pp_age > args.payout_interval * 3:
+                    bad(f"the last payment was {age/60:.0f} minutes ago and the last "
+                        f"postponement was {pp_age/60:.0f} minutes ago -- the payment run "
+                        f"itself has stopped, not the money")
+                else:
+                    warn(f"payments postponed {pp_age/60:.0f} min ago: wallet holds "
+                         f"{held:.2f} WAM against {due:.2f} WAM due, short {short:.2f}. "
+                         f"Blocks mature at 100 confirmations, so this clears itself -- "
+                         f"but {owed/COIN:.2f} WAM is owed and the last payment was "
+                         f"{age/60:.0f} min ago")
+            elif late:
                 bad(f"owed {owed/COIN:.2f} WAM is above the {minimum/COIN:g} WAM "
                     f"threshold and the last payment was {age/60:.0f} minutes ago "
                     f"(interval is {args.payout_interval//60} min) -- payouts have stopped")

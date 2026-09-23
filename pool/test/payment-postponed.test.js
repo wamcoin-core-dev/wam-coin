@@ -1,0 +1,189 @@
+'use strict';
+// Copyright (c) 2026 The WAM Coin developers
+// Distributed under the MIT software license, see COPYING.
+//
+// ---------------------------------------------------------------------------
+// A postponed payment run and a broken one look identical from outside.
+//
+// The pool refuses to send a batch its wallet cannot cover, because a
+// half-failed sendmany is far harder to reconcile than a late payment. Block
+// rewards mature at 100 confirmations, so the wallet is routinely short of
+// what has already been credited to miners, and the run waits.
+//
+// Seen from a monitor, that is the same picture as payments being broken:
+// owed climbs, the last payment ages, nothing is sent. On 2026-09-23 the
+// sweep reported "payouts have stopped" while the pool was working exactly as
+// designed -- it paid 808.51 WAM to 23 miners minutes later.
+//
+// A monitor that reports the safe case as an emergency does more harm than no
+// monitor at all: the operator learns that the red card means nothing, and is
+// not looking on the day it means something. The pool is the only party that
+// knows which of the two it is, so it must publish the reason rather than
+// leave it in a log line nobody reads.
+// ---------------------------------------------------------------------------
+
+const assert = require('assert');
+const ShareProcessor = require('../lib/shareProcessor');
+
+let pass = 0;
+const fail = [];
+const quiet = { info() {}, warn() {}, error() {}, debug() {} };
+const COIN = 100000000;
+
+async function test(name, fn) {
+    try { await fn(); pass++; console.log(`  \x1b[32mok\x1b[0m    ${name}`); }
+    catch (e) { fail.push(name); console.log(`  \x1b[31mFAIL\x1b[0m  ${name}\n        ${e.message}`); }
+}
+
+/** Enough of ioredis to drive the payment path and getPoolStats. */
+function fakeRedis(balances = {}) {
+    const hashes = { 'wam:balances': { ...balances }, 'wam:paid': {}, 'wam:blocks:pending': {} };
+    const strings = {};
+    const lists = { 'wam:payments': [], 'wam:blocks:confirmed': [], 'wam:blocks:orphaned': [] };
+    const r = {
+        _strings: strings,
+        async hgetall(k) { return { ...(hashes[k] || {}) }; },
+        async get(k) { return strings[k] ?? null; },
+        async set(k, v) { strings[k] = v; },
+        async del(k) { delete strings[k]; },
+        async lrange(k, a, b) { return (lists[k] || []).slice(a, b + 1); },
+        async llen(k) { return (lists[k] || []).length; },
+        pipeline() {
+            const ops = [];
+            const p = {
+                hincrby(k, f, by) { ops.push(['hincrby', k, f, by]); return p; },
+                hincrbyfloat() { return p; },
+                hset() { return p; },
+                hdel() { return p; },
+                incrby() { return p; },
+                decrby() { return p; },
+                lpush(k, v) { (lists[k] = lists[k] || []).unshift(v); return p; },
+                ltrim() { return p; },
+                del(k) { ops.push(['del', k]); return p; },
+                async exec() {
+                    for (const [op, k, f, by] of ops) {
+                        if (op === 'hincrby') {
+                            hashes[k] = hashes[k] || {};
+                            hashes[k][f] = String(parseInt(hashes[k][f] || '0', 10) + by);
+                        } else if (op === 'del') {
+                            delete strings[k];
+                        }
+                    }
+                    return [];
+                }
+            };
+            return p;
+        }
+    };
+    return r;
+}
+
+/** balanceWam is what the wallet can actually spend right now. */
+function fakeDaemon(balanceWam) {
+    return {
+        sent: [],
+        async getBalance() { return balanceWam; },
+        async cmd(method, params) {
+            if (method !== 'sendmany') return null;
+            this.sent.push(params[1]);
+            return `txid-${this.sent.length}`;
+        }
+    };
+}
+
+function make(redis, daemon, cfg = {}) {
+    return new ShareProcessor(redis, daemon, {
+        redisPrefix: 'wam', rewardMode: 'pplns', minimumPayoutWam: 1, ...cfg
+    }, quiet);
+}
+
+(async () => {
+    console.log('\n=== a postponement must be published, not only logged ===');
+
+    await test('a wallet short of the batch writes the reason and sends nothing', async () => {
+        // 300 WAM is owed across two miners; the wallet holds 100.
+        const redis = fakeRedis({ addr1: String(200 * COIN), addr2: String(100 * COIN) });
+        const daemon = fakeDaemon(100);
+        const sp = make(redis, daemon);
+
+        await sp.processPayments();
+
+        assert.strictEqual(daemon.sent.length, 0,
+            'the pool sent a payment its wallet could not cover');
+
+        const raw = await redis.get('wam:payment:postponed');
+        assert.ok(raw, 'the run postponed but published no reason, so a monitor '
+                     + 'cannot tell this from payments being broken');
+
+        const pp = JSON.parse(raw);
+        assert.strictEqual(pp.held, 100 * COIN, `held was ${pp.held}`);
+        assert.ok(pp.due > pp.held, 'due must exceed held or there was nothing to postpone');
+        assert.strictEqual(pp.shortfall, pp.due - pp.held,
+            'the shortfall must be the arithmetic, not a second opinion');
+        assert.ok(pp.at > Date.now() - 60000,
+            'the record must carry when it happened; a monitor needs the age to '
+            + 'tell a current postponement from a stale one');
+    });
+
+    await test('the record says how many miners are waiting', async () => {
+        const redis = fakeRedis({ a: String(200 * COIN), b: String(100 * COIN), c: String(50 * COIN) });
+        const sp = make(redis, fakeDaemon(10));
+        await sp.processPayments();
+        const pp = JSON.parse(await redis.get('wam:payment:postponed'));
+        assert.strictEqual(pp.recipients, 3, `recipients was ${pp.recipients}`);
+    });
+
+    console.log('\n=== and cleared the moment a run pays ===');
+
+    await test('a successful run deletes the postponement record', async () => {
+        const redis = fakeRedis({ addr1: String(200 * COIN), addr2: String(100 * COIN) });
+        const poor = fakeDaemon(100);
+        const sp = make(redis, poor);
+
+        await sp.processPayments();
+        assert.ok(await redis.get('wam:payment:postponed'), 'setup: expected a postponement');
+
+        // Blocks matured; the wallet can now cover it.
+        const rich = fakeDaemon(1000);
+        const sp2 = make(redis, rich);
+        await sp2.processPayments();
+
+        assert.strictEqual(rich.sent.length, 1, 'the funded run did not pay');
+        assert.strictEqual(await redis.get('wam:payment:postponed'), null,
+            'the record survived a run that paid, so the monitor will report a '
+            + 'postponement that is over');
+    });
+
+    console.log('\n=== and reaches the monitor through the stats ===');
+
+    await test('getPoolStats carries paymentPostponed, and null once it clears', async () => {
+        const redis = fakeRedis({ addr1: String(200 * COIN) });
+        const sp = make(redis, fakeDaemon(1));
+        await sp.processPayments();
+
+        let stats = await sp.getPoolStats();
+        assert.ok(stats.paymentPostponed, 'stats hid the postponement from the monitor');
+        assert.strictEqual(typeof stats.paymentPostponed.shortfall, 'number',
+            'the shortfall must arrive as a number the monitor can compare');
+
+        const rich = fakeDaemon(1000);
+        const sp2 = make(redis, rich);
+        await sp2.processPayments();
+
+        stats = await sp2.getPoolStats();
+        assert.strictEqual(stats.paymentPostponed, null,
+            'stats still report a postponement after a run that paid');
+    });
+
+    await test('a corrupt record is reported as no record, not as a crash', async () => {
+        const redis = fakeRedis({ addr1: String(200 * COIN) });
+        const sp = make(redis, fakeDaemon(1000));
+        redis._strings['wam:payment:postponed'] = '{not json';
+        const stats = await sp.getPoolStats();
+        assert.strictEqual(stats.paymentPostponed, null,
+            'a damaged record took the whole stats endpoint down with it');
+    });
+
+    console.log(`\n  ${pass} passed, ${fail.length} failed`);
+    if (fail.length) { fail.forEach((f) => console.log(`    - ${f}`)); process.exit(1); }
+})();
