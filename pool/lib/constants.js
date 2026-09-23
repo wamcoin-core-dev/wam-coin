@@ -41,6 +41,10 @@ module.exports = {
 
     // Timing
     POW_TARGET_SPACING: 120,
+    // The consensus constant, matching src/consensus/consensus.h. It is NOT
+    // the depth at which a coinbase can be spent: Core's wallet asks for
+    // (COINBASE_MATURITY + 1) - depth, so the coin moves at 101, not 100.
+    // Anything deciding whether the pool can pay must use the second number.
     COINBASE_MATURITY: 100,
 
     // RandomX

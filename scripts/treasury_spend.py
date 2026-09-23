@@ -121,13 +121,19 @@ def cmd_plan(args):
         die("the scan did not complete")
 
     utxos = scan.get("unspents", [])
-    mature = [u for u in utxos if tip - u["height"] + 1 >= COINBASE_MATURITY]
+    # Spendable at depth 101, not 100. Consensus rejects a coinbase spent
+    # earlier than (COINBASE_MATURITY + 1) confirmations -- Core's own wallet
+    # computes max(0, (COINBASE_MATURITY + 1) - depth) -- so a selection that
+    # stops at 100 can put an output in the plan that the network will not
+    # accept, and the failure arrives at broadcast, after the key has already
+    # been used on the offline machine. Every treasury output is a coinbase.
+    mature = [u for u in utxos if tip - u["height"] + 1 > COINBASE_MATURITY]
     young = len(utxos) - len(mature)
 
     print("  height              %d" % tip)
     print("  outputs             %d, totalling %s WAM" %
           (len(utxos), wam(float(scan["total_amount"]))))
-    print("  spendable now       %d (%d are under %d confirmations)" %
+    print("  spendable now       %d (%d are at or under %d confirmations)" %
           (len(mature), young, COINBASE_MATURITY))
 
     # Oldest first: it spends the coins that have been there longest and keeps

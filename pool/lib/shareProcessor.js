@@ -27,9 +27,11 @@
 //  paying people who were not mining when the block was won -- which is both
 //  unfair and, once miners notice, fatal to the pool's reputation.
 //
-//  Balances are only credited once a block has COINBASE_MATURITY confirmations
-//  AND is still on the main chain. An orphaned block pays nobody; its record
-//  moves to <p>:blocks:orphaned so the loss is auditable rather than silent.
+//  Balances are only credited once a block's coinbase is SPENDABLE -- more
+//  than COINBASE_MATURITY confirmations, which is 101 and not 100, because
+//  Core's wallet asks for (COINBASE_MATURITY + 1) - depth -- AND is still on
+//  the main chain. An orphaned block pays nobody; its record moves to
+//  <p>:blocks:orphaned so the loss is auditable rather than silent.
 
 const EventEmitter = require('events');
 
@@ -355,7 +357,28 @@ class ShareProcessor extends EventEmitter {
 
             record.confirmations = block.confirmations;
 
-            if (block.confirmations < this.maturity) {
+            // Spendable, not mature: the two differ by exactly one block.
+            //
+            // COINBASE_MATURITY is 100, and reading that as "credit at 100
+            // confirmations" is wrong. Core's own wallet computes
+            //
+            //     max(0, (COINBASE_MATURITY + 1) - depth)          wallet.cpp
+            //
+            // so a coinbase output is spendable at depth 101, not 100. The
+            // pool credited at 100 and then could not spend what it had just
+            // credited, so it believed it held one block more than the node
+            // would let it move -- 47.5 WAM standing between what is owed and
+            // what can be sent, permanently, for the whole life of the chain.
+            //
+            // Nothing was lost by it and nobody was paid twice; the arithmetic
+            // reconciles to 0.1 WAM of accumulated transaction fees. What it
+            // cost was time: every payment run that landed in the gap
+            // postponed, and a 10-minute payout interval became 20 to 40
+            // minutes for miners who had done nothing wrong.
+            //
+            // Credit when the coin can actually move. A pool that credits
+            // earlier is promising money it cannot send.
+            if (block.confirmations <= this.maturity) {
                 await this.redis.hset(this.k('blocks:pending'), hash, JSON.stringify(record));
                 continue;
             }

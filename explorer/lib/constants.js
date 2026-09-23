@@ -25,6 +25,9 @@ module.exports = {
     DEVFEE_LAST_HEIGHT: 400000,
 
     POW_TARGET_SPACING: 120,
+    // The consensus constant. A coinbase is SPENDABLE one block later, at
+    // depth 101: Core's wallet asks for (COINBASE_MATURITY + 1) - depth.
+    // Anything deciding whether a coin can move must use the second number.
     COINBASE_MATURITY: 100,
 
     // Founder reserve vesting -- exact calendar anniversaries of the launch.
