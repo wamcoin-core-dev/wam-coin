@@ -4,11 +4,17 @@ REPLY TO dang150296 -- Discord #general-chat
 Five messages, posted in order, one after the other. Each stands on its own
 if a conversation interrupts between them.
 
+His follow-up on governance is answered in three more, at the end of this
+file.
+
 Rules this text obeys:
   * no date is promised for anything
   * the security reviewer is not named -- if he wants to be known he speaks
   * no "the next Bitcoin", no ranking against Monero or Bitcoin
   * the swap rate is attributed to the person who set it, with the PR to read
+  * review has NOT been one person. Outside reviewers read this code and
+    their findings changed it; friends read it before them. An early draft
+    called it a single point of failure and the founder corrected it.
 
 --------------------------------------------------------------- 1 of 5
 
@@ -88,3 +94,88 @@ think will be dodged.
 
 If you want that, say so here and we will fix a time that works for the people
 who actually show up rather than the one that suits me.
+
+=====================================================================
+HIS FOLLOW-UP: how does an idea become part of WAM?
+=====================================================================
+
+Asked 2026-09-23 in #general-chat: the path from proposal to discussion to
+decision to funding to implementation; whether there will be a formal
+process, treasury funding, contributor bounties, maintainer review; and
+whether WAM develops its own technical identity or keeps the base protocol
+simple and lets the ecosystem differentiate around it.
+
+--------------------------------------------------------------- 6 of 8
+
+How an idea becomes part of WAM, mechanically:
+
+It arrives as an issue or a pull request, in the open. It gets argued about
+by whoever shows up. If it survives that, it ships in a release. And then the
+part that most projects do not have -- nobody has to take it. A release is an
+offer, not an instruction. Every node operator chooses whether to run it, and
+a change that people do not install does not happen, no matter who wrote it,
+who merged it, or whose key signed the binary.
+
+That is worth being precise about, because it is the whole answer to "who
+decides". There is no board to lobby, no token weight to accumulate, no
+foundation that can be pressured or bought, and no seat I could hand someone
+even if I wanted to. The people running the software decide, by running it or
+not. It is a slower mechanism than a vote and a much harder one to capture,
+because there is nothing in the middle to capture.
+
+What is not written down yet is the path in front of that: how a proposal
+gets discussed, who reviews it, how it gets funded if it needs funding. That
+document does not exist, and I would rather say so than describe one.
+
+--------------------------------------------------------------- 7 of 8
+
+What exists today, each of which you can check rather than take from me:
+
+  * Bounties, published before launch with their tiers, in SECURITY.md. Two
+    findings are accepted and listed there with the amount and the reasoning
+    for the amount -- including the one where we argued ourselves DOWN to a
+    lower tier and wrote out why, because a tier decision without a reason is
+    just a number.
+
+  * A treasury with a stated purpose and a hard end. 5% of the block subsidy,
+    heights 1 to 400,000, then zero -- about eighteen months and 750,000 WAM
+    in total, ever. The whitepaper section 3.2 names what it funds: listings,
+    an independent audit, infrastructure, legal costs, and development. It is
+    working capital for a launch, not a perpetual fund, and pretending
+    otherwise would set up exactly the disappointment you are asking about.
+
+  * Every coin that leaves it published with its amount, its reason and its
+    transaction id, checkable against your own node.
+
+What does not exist: a written proposal process. Not a review culture --
+outside reviewers have read this code and their findings changed it, two of
+them accepted and listed in SECURITY.md with the amounts, and friends read it
+before any of that. What is missing is the written path from an idea to a
+decision, which is the thing you actually asked about.
+
+A governance document written alone by the person it is meant to constrain is
+not worth the file it sits in. If this matters to you, help write it -- that
+is a real invitation and not a polite one.
+
+--------------------------------------------------------------- 8 of 8
+
+Your last question is the one I have an actual opinion on.
+
+The base layer should stay conservative, and that IS the technical identity
+rather than the absence of one. The consensus rules are the terms every person
+who pointed a machine at this chain agreed to: a 22,000,000 cap, a halving
+every 200,000 blocks, a premine vested to 2031 and not liquid at launch, and a
+treasury fee that expires by consensus at height 400,000. CONTRIBUTING.md
+already puts changes to those out of scope, and it said so before there was
+anyone to say it to. A patch that alters them is a proposal for a different
+coin, and it should be honest enough to call itself one.
+
+What that leaves is not nothing -- it is most of the work. The node, the
+reference miner, the pool, the explorer, wallets, payment tooling, everything
+that makes a coin usable rather than merely valid. That is where differences
+between projects actually get made, and none of it needs permission from a
+consensus rule.
+
+So: a small, hard, boring base, and everything interesting built around it.
+That is Bitcoin's bet, and choosing it deliberately after seeing the
+alternatives is a position, not a lack of one.
