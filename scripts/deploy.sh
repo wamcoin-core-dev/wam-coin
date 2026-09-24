@@ -64,7 +64,7 @@ for h in "${HOSTS[@]}"; do
     before="$(ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o BatchMode=yes -o ConnectTimeout=15 "root@$h" \
         'git -C /opt/wam rev-parse --short HEAD' 2>/dev/null)"
     # The default protocol first, then v0. Measured on 2 September 2026:
-    # git 2.43.0 on Ubuntu 24.04 fails protocol v2 against GitHub six times in
+    # git 2.43.0 on Ubuntu 24.04 fails protocol v2 against the remote six times in
     # eight, on both servers, with "expected flush after ref listing"; v0
     # failed none in eight. The laptop's newer git passes both, which is why
     # this only ever bit the servers.

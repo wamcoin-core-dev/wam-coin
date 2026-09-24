@@ -20,9 +20,9 @@
 #  business but the author's.
 #
 #  The remote matters as much as the branch, and it did not until 2026-09-24.
-#  That day the project lost its GitHub account and started pushing the same
-#  history to GitLab and Gitea as mirrors -- and this hook refused every one
-#  of them, because it looked only at the branch name. A guard that fires on
+#  That day the project lost its GitHub account; GitLab became origin and
+#  GitHub a mirror -- and this hook refused every mirror push, because it
+#  looked only at the branch name. A guard that fires on
 #  a push it was never meant to guard teaches the author to pass WAM_SHIP=1
 #  by habit, and then it guards nothing on the day it matters.
 #
@@ -49,7 +49,7 @@ remote_url="${2:-}"
 deploy_remote="$(git config --get wam.deployRemote 2>/dev/null || echo origin)"
 
 case "$remote_url" in
-    *github.com*wam-coin-official*) ;;   # the deploy remote, guarded below
+    *gitlab.com*WAMCoin*) ;;             # the deploy remote, guarded below
     *)
         # Not the URL the hosts pull from. If the name matches the configured
         # deploy remote anyway, keep guarding; otherwise this is a mirror.
