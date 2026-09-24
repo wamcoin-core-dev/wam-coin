@@ -115,6 +115,45 @@ lose every miner's money if the RPC failed.
 A payment run is postponed entirely if the wallet cannot cover the full amount plus the fee
 reserve. A partially failed batch is far harder to reconcile than a delayed one.
 
+**A postponement is published, not only logged.** The pool writes
+`<prefix>:payment:postponed` with the wallet balance, the amount due and the shortfall, and
+clears it on any run that pays. `getPoolStats` carries it as `paymentPostponed`. Without
+that, a postponement and a broken payout look identical from outside — owed climbs, the last
+payment ages, nothing is sent — and `check_pool.py` reported the safe one as "payouts have
+stopped", which is how an operator learns to ignore a red card.
+
+**Credit at 101 confirmations, not 100.** `COINBASE_MATURITY` is 100 and Core's wallet asks
+for `(COINBASE_MATURITY + 1) - depth`, so a coinbase is spendable at depth 101. Until
+v0.1.10 the pool credited at 100 and then could not spend what it had just credited, so it
+believed it held one block more than the node would let it move — 47.5 WAM standing
+permanently between what was owed and what could be sent. Nothing was lost and nobody was
+paid twice; it cost time, and payouts drifted from ten minutes to twenty or forty.
+
+## Your fee, kept apart from miners' money
+
+`poolFeePercent` is yours, and while it sits in the pool wallet nobody outside can tell it
+from coin owed to miners. That matters because it makes the one question a miner actually
+has — does this pool hold enough to pay me — unanswerable.
+
+Set `poolFeeAddress` to an address **that receives nothing else and belongs to a wallet the
+pool does not hold**, and sweep to it:
+
+```bash
+python3 scripts/sweep_pool_fee.py --node HOST            # plan only
+python3 scripts/sweep_pool_fee.py --node HOST --send     # actually move it
+```
+
+It is the only tool in this repository that spends from the pool wallet, so it is built to
+refuse: nothing moves without `--send`, it rejects a destination the node does not call
+valid, rejects one the pool's own wallet owns, rejects a sweep that would leave the wallet
+unable to cover what is owed — your fee is the last money out, never the first — rejects
+dust below `--min`, and decrements the accrual only after a txid comes back.
+
+Then whatever remains in the pool wallet is miners' money, and
+`scripts/check_pool.py --node HOST` compares it against what the pool says it owes. The
+page shows the address, so "1%" is something a miner can follow rather than a number he is
+asked to believe.
+
 ---
 
 ## Difficulty

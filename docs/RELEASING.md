@@ -25,11 +25,35 @@ documents name the tag and the tag is built from the documents.
 ## 2. Tag, and say if it is mandatory
 
 ```
-git tag -a v0.1.7 -m "one line, then the release notes"
-git push origin main && git push origin v0.1.7
+git tag -a v0.1.10 -F posts/v0.1.10/TAG_MESSAGE.txt
+git push origin main && git push origin v0.1.10
 ```
 
 The annotated tag message becomes the release notes.
+
+**Write it in `posts/<version>/TAG_MESSAGE.txt` and read what the bot would
+send before tagging.** `bots/announce.js` posts the first whole paragraphs
+that fit in twelve lines to Telegram and Discord the moment the release is
+published, with nobody reviewing it in between — so the first two paragraphs
+have to stand alone to a reader who sees nothing else. Render it rather than
+imagining it:
+
+```
+node -e "
+const A = require('./bots/announce.js');
+const { toDiscord } = require('./bots/lib/markup.js');
+const txt = require('fs').readFileSync('posts/v0.1.10/TAG_MESSAGE.txt','utf8');
+const body = txt.split('-'.repeat(78))[1].replace(/^\n+/, '');
+console.log(toDiscord(A.releaseMessage({ tag:'v0.1.10', name:'WAM Coin v0.1.10',
+  url:'https://github.com/wam-coin-official/wam-coin/releases/tag/v0.1.10',
+  body, prerelease:true })));
+"
+```
+
+Until v0.1.10 the bot cut the notes at line twelve wherever that fell, and
+every release this project published was announced mid-sentence — twice
+mid-word. It now stops at a paragraph and says when it left some behind, but
+the first paragraphs are still the whole message most people will read.
 
 **If the release changes a consensus rule, the tag message must contain a
 line beginning `MANDATORY:`.** The workflow copies it to the top of the
@@ -74,6 +98,14 @@ run by hand:
 
 * Actions → **platform-build** → **Run workflow**, with `Version` set to the
   same version as the tag
+
+**Both jobs now gate on `--solo` as well as on consensus.** Each starts a
+regtest node with the platform's own `wamd`, runs `wam-miner --check` against
+it, and mines two blocks with `--solo` that the node must accept with the
+reward arriving at the address given. If that fails on Windows or macOS, the
+artifact does not exist and there is nothing to attach — which is the point:
+before v0.1.10 both options were proved on one Linux laptop and shipped to
+the other two platforms untested.
 * when it is green, download the artifact **`wam-windows-x86_64`** from the
   bottom of the run page — about 14 MB, and it holds the two finished
   archives, not loose binaries
