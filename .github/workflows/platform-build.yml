@@ -360,6 +360,21 @@ jobs:
           }
           exit 0
 
+      # Before the sync, because it is fast and it fails for reasons the sync
+      # cannot show. A node can agree with the chain perfectly while the miner
+      # beside it cannot build a block that node will accept -- and --solo
+      # shipped to Windows never once having been run on Windows, to the
+      # platform most of the people who would mine alone are on.
+      - name: --solo mines on Windows, end to end
+        run: |
+          set -o pipefail
+          chmod +x bin/*.exe 2>/dev/null || true
+          bash scripts/test/test_platform_solo.sh bin 2>&1 | tee solo.log
+
+      - name: Say why solo mining failed on Windows
+        if: failure()
+        run: bash scripts/ci_annotate_failure.sh solo.log "--solo working on Windows"
+
       - name: Sync the test chain from genesis, on Windows
         run: |
           set -o pipefail
@@ -494,6 +509,19 @@ jobs:
           set -euo pipefail
           ls -l bin/wam-miner
           ./bin/wam-miner --self-test --no-colour
+
+      # Before the sync, because it is fast and it fails for reasons the sync
+      # cannot show. A node can agree with the chain perfectly while the miner
+      # beside it cannot build a block that node will accept -- and --solo
+      # shipped to macOS never once having been run on a Mac.
+      - name: --solo mines on macOS, end to end
+        run: |
+          set -o pipefail
+          bash scripts/test/test_platform_solo.sh bin 2>&1 | tee solo.log
+
+      - name: Say why solo mining failed on macOS
+        if: failure()
+        run: bash scripts/ci_annotate_failure.sh solo.log "--solo working on macOS"
 
       - name: Sync the test chain from genesis, on macOS
         run: |

@@ -368,6 +368,45 @@ function verifyPublishedRelease(tag, scriptPath) {
     };
 }
 
+/**
+ * The first whole paragraphs of a release body that fit inside `maxLines`.
+ *
+ * Paragraphs are separated by a blank line, which is how the release notes in
+ * this repository are written. A paragraph that would not fit is left out
+ * entirely rather than cut, and if anything was left out the caller is told in
+ * the text, because silence there is what produced a truncated sentence.
+ *
+ * If the very first paragraph is longer than the budget there is nothing to be
+ * done but cut it -- at a line, never inside one -- since a message with no
+ * body at all would be worse.
+ */
+function headParagraphs(text, maxLines) {
+    const paras = String(text).split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+    if (!paras.length) return '';
+
+    const kept = [];
+    let lines = 0;
+    for (const p of paras) {
+        const n = p.split('\n').length;
+        // +1 for the blank line between paragraphs, once there is one to
+        // separate from.
+        const cost = n + (kept.length ? 1 : 0);
+        if (lines + cost > maxLines) break;
+        kept.push(p);
+        lines += cost;
+    }
+
+    if (!kept.length) {
+        kept.push(paras[0].split('\n').slice(0, maxLines).join('\n'));
+    }
+
+    if (kept.length < paras.length) {
+        kept.push('Full notes at the link below.');
+    }
+    return kept.join('\n\n');
+}
+
+
 function releaseMessage(release) {
     const raw = String(release.body || '');
     const flag = raw.match(MANDATORY);
@@ -378,7 +417,20 @@ function releaseMessage(release) {
 
     // Truncated by line before conversion, never after: the marks are single
     // characters and slicing a rendered string can cut one off from its pair.
-    const body = fromMarkdown(cleaned.split('\n').slice(0, 12).join('\n'));
+    //
+    // And truncated at a PARAGRAPH boundary, not at line 12.
+    //
+    // A flat slice(0, 12) cut every release this project has published in the
+    // middle of a sentence, and twice in the middle of a word. v0.1.9's
+    // announcement ended "On 15 September there was no h" -- in every channel,
+    // to everybody, automatically. A message that stops mid-word reads as
+    // broken software, which is a strange thing to advertise in the post
+    // announcing the software.
+    //
+    // So: take whole paragraphs while they fit, and if anything was left
+    // behind say so rather than trailing off. The release URL is printed
+    // below regardless, so the rest is always one click away.
+    const body = fromMarkdown(headParagraphs(cleaned, 12));
 
     return [
         flag
@@ -398,7 +450,15 @@ function releaseMessage(release) {
         // Every release before 1.0 is a pre-release, and a channel that
         // announces one without saying so is describing the project as further
         // along than it is.
-        ...(release.prerelease ? [i('Pre-release — testnet software.')] : []),
+        // "Pre-release" on GitHub means pre-1.0, and that is what this line
+        // must say. It used to say "testnet software", which was true until
+        // 2026-09-15 and false from the moment mainnet started -- so every
+        // mainnet release since has been announced to every channel as testnet
+        // software, automatically, by us. The flag did not change meaning; the
+        // chain did, and this sentence did not follow it.
+        ...(release.prerelease
+            ? [i('Pre-1.0 — the chain is live, the software is still young.')]
+            : []),
         ``,
         body,
         ``,
@@ -788,7 +848,7 @@ async function main() {
 }
 
 module.exports = {
-    heartbeat, halvingMessage, rotationMessage, releaseMessage,
+    heartbeat, halvingMessage, rotationMessage, releaseMessage, headParagraphs,
     milestoneMessage, stallMessage, recoveredMessage, networkLabel, applyBanner,
     loadConfig, tick, num, wam, hashrate, duration,
     verifyPublishedRelease

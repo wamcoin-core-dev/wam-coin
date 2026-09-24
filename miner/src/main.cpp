@@ -643,8 +643,16 @@ struct Options {
     std::string rpcUser;
     std::string rpcPass;
     std::string rpcCookie;
+    bool        rpcPortGiven = false;   // did --rpc name a port explicitly?
     std::string network = "mainnet";
     int         pollSeconds = 5;
+
+    // Stop after this many accepted blocks. 0 means never stop, which is what
+    // a person mining wants. A test wants a number: without one, proving that
+    // --solo works on a platform means running it for a fixed wall-clock time
+    // and guessing, which fails on a slow machine and passes on a fast one
+    // whatever the code does.
+    uint64_t    stopAfterBlocks = 0;
 };
 
 void PrintHelp()
@@ -674,11 +682,16 @@ void PrintHelp()
 "                            instead of after hours of mining.\n"
 "        --solo              mine for yourself against your own node, with\n"
 "                            no pool at all. Needs -u and a running wamd.\n"
-"        --rpc <host:port>   the node RPC address (default 127.0.0.1:9554)\n"
+"        --rpc <host:port>   the node RPC address. Left out, the port follows\n"
+"                            --network: 9554 mainnet, 19554 testnet,\n"
+"                            29554 regtest.\n"
 "        --rpcuser <name>    RPC credentials, as in wam.conf. Omit both and\n"
 "        --rpcpassword <s>   the miner reads the node .cookie instead.\n"
 "        --rpccookie <path>  where that cookie is, if not the default\n"
 "        --network <net>     mainnet (default), testnet or regtest\n"
+"        --blocks <n>        exit once n blocks have been accepted. Meant for\n"
+"                            testing on regtest; without it the miner runs\n"
+"                            until stopped, which is what mining is.\n"
 "        --self-test         verify SHA-256, byte order, targets and RandomX\n"
 "                            against known vectors, then exit\n"
 "        --no-colour         plain output, for logs and pipes\n"
@@ -715,6 +728,13 @@ bool ParseOptions(int argc, char** argv, Options& opt, std::string& err)
         if (a == "-h" || a == "--help") { opt.help = true; return true; }
         else if (a == "--self-test")    { opt.selfTest = true; }
         else if (a == "--solo")         { opt.solo = true; }
+        else if (a == "--blocks") {
+            const char* v = needsValue(i, "--blocks");
+            if (!v) return false;
+            const long long n = std::atoll(v);
+            if (n <= 0) { err = "--blocks needs a positive number"; return false; }
+            opt.stopAfterBlocks = (uint64_t)n;
+        }
         else if (a == "--check")        { opt.solo = true; opt.check = true; }
         else if (a == "--rpc") {
             const char* v = needsValue(i, "--rpc");
@@ -726,6 +746,7 @@ bool ParseOptions(int argc, char** argv, Options& opt, std::string& err)
             const int port = std::atoi(url.c_str() + colon + 1);
             if (port <= 0 || port > 65535) { err = "--rpc has a bad port"; return false; }
             opt.rpcPort = uint16_t(port);
+            opt.rpcPortGiven = true;
         }
         else if (a == "--rpcuser")     { const char* v = needsValue(i, "--rpcuser");     if (!v) return false; opt.rpcUser = v; }
         else if (a == "--rpcpassword") { const char* v = needsValue(i, "--rpcpassword"); if (!v) return false; opt.rpcPass = v; }
@@ -785,6 +806,21 @@ bool ParseOptions(int argc, char** argv, Options& opt, std::string& err)
             err = "unknown option '" + a + "' (try --help)";
             return false;
         }
+    }
+
+    // The RPC port follows the network unless it was named.
+    //
+    // It defaulted to 9554 whatever --network said, so `--solo --network
+    // testnet` reached for the mainnet port and failed with "could not
+    // connect" -- which reads as "your node is not running" to somebody whose
+    // node is running perfectly, on the other port. Every other tool in this
+    // project derives the port from the chain; the miner did not, and it is
+    // the tool most likely to be used by somebody who has never seen an RPC
+    // port before.
+    if (!opt.rpcPortGiven) {
+        if (opt.network == "testnet")      opt.rpcPort = 19554;
+        else if (opt.network == "regtest") opt.rpcPort = 29554;
+        else                               opt.rpcPort = 9554;
     }
     return true;
 }
@@ -971,11 +1007,30 @@ int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int c
             Info(line);
         }
 
+        // --blocks: stop once the node has accepted that many. `accepted` and
+        // not `blocksFound`, because a block the node rejected proves the
+        // opposite of what this is asked to prove.
+        if (opt.stopAfterBlocks && state.accepted.load() >= opt.stopAfterBlocks) {
+            Info("reached --blocks " + std::to_string(opt.stopAfterBlocks) +
+                 "; stopping");
+            break;
+        }
+
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 
     state.running.store(false);
     for (std::thread& t : workers) if (t.joinable()) t.join();
+
+    // A run asked for n blocks and given fewer has failed, and must say so
+    // with an exit code -- a test that reads the log for a phrase is a test
+    // that passes when the phrase changes.
+    if (opt.stopAfterBlocks && state.accepted.load() < opt.stopAfterBlocks) {
+        Fail("stopped with " + std::to_string(state.accepted.load()) +
+             " accepted block(s), asked for " +
+             std::to_string(opt.stopAfterBlocks));
+        return 1;
+    }
     return 0;
 }
 

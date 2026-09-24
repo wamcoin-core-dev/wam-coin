@@ -80,12 +80,30 @@ Nothing is lost either way — `createwallet` writes a file and deleting
 6 September by somebody following this page, restarting his node three times,
 and being told his wallet did not exist.
 
-The last command prints your address; it starts with `wam1`. Then, from
-where the miner unpacked:
+The last command prints your address; it starts with `wam1`. Then you choose
+one of two ways to mine, and the first is the better one:
+
+**Alone, against your own node.** Nothing between you and the chain, no
+operator to trust, and the whole 47.5 WAM when you find a block:
+
+```
+./wam-miner --solo -u YOUR_ADDRESS -t 4
+```
+
+That needs the node you just started to be running, with `server=1` in
+`wam.conf`. [Mining alone](#mining-alone-which-works-here) has the detail,
+including `--check`, which asks your node whether your block would be valid
+before you spend a second hashing.
+
+**In a pool**, if you would rather be paid a little every few hours than the
+whole reward rarely:
 
 ```
 ./wam-miner -o stratum+tcp://pool.wamcoin.org:3333 -u YOUR_ADDRESS -t 4
 ```
+
+There is more than one pool, and ours takes a 1% operator fee like the
+others. [Which pool](#which-pool) lists them.
 
 **COPY the address, do not retype it.** The checksum catches a single wrong
 character, which is what it is for. If your miner's log says "bech32 checksum
@@ -174,11 +192,22 @@ Start-Process -FilePath .\wamd.exe `
 program is `C:\WINDOWS\system32\curl.exe`, which is why every download
 above says `curl.exe` rather than `curl`.
 
-and the miner, from the folder it unpacked into:
+and the miner, from the folder it unpacked into. Alone against your own node,
+which is the better way — it needs `server=1` in `wam.conf` and the node
+running:
+
+```
+.\wam-miner.exe --solo -u YOUR_ADDRESS -t 4
+```
+
+or in a pool, if you would rather be paid a little often than a lot rarely:
 
 ```
 .\wam-miner.exe -o stratum+tcp://pool.wamcoin.org:3333 -u YOUR_ADDRESS -t 4
 ```
+
+[Mining alone](#mining-alone-which-works-here) and
+[which pool](#which-pool) are below.
 
 ### Windows will call the miner a virus, and it is wrong
 
@@ -265,11 +294,21 @@ cd wam-coin-v0.1.9/bin
 ./wam-cli -datadir=$HOME/wam/data -rpcwallet=mine getnewaddress
 ```
 
-and the miner, from where it unpacked:
+and the miner, from where it unpacked. Alone against your own node, which is
+the better way — it needs `server=1` in `wam.conf` and the node running:
+
+```
+./wam-miner --solo -u YOUR_ADDRESS -t 4
+```
+
+or in a pool, if you would rather be paid a little often than a lot rarely:
 
 ```
 ./wam-miner -o stratum+tcp://pool.wamcoin.org:3333 -u YOUR_ADDRESS -t 4
 ```
+
+[Mining alone](#mining-alone-which-works-here) and
+[which pool](#which-pool) are below.
 
 ### macOS will refuse to run them the first time
 
@@ -324,6 +363,27 @@ market.
 Coins from a block cannot be spent for 100 blocks, about three hours. That is
 consensus, not the pool.
 
+## Which pool
+
+There is more than one, and they are not run by us:
+
+```
+pool.wamcoin.org:3333             run by this project, 1% operator fee
+wam.ariabrain.com:3333
+stratum.cryptopickaxe.co.uk:6040
+```
+
+Ask their operators about their fees and their payout rules — those are
+theirs to state, not ours to state for them. All three answered when this
+page was last checked; if one does not answer for you, try another.
+
+**Ours charges the same as the others on purpose.** It ran at 0% while it was
+the only pool in existence, and a pool charging nothing is not competing with
+the others — nobody can offer less than nothing. Matching their rate means
+you pick a pool for how it runs rather than for a number that cannot be
+beaten. The 1% is taken after the chain's 5% treasury output, and it goes to
+an address that receives nothing else, named on pool.wamcoin.org.
+
 ## Mining alone, which works here
 
 Most guides tell you to join a pool and stop there. At this network size you
@@ -354,10 +414,9 @@ anyway.
 
 ### How, exactly
 
-> **This needs a miner newer than v0.1.9.** `--solo` and `--check` are built
-> and tested but not yet in a published download. Until they are, mining
-> alone still means running the pool software for yourself, which is what
-> `docs/POOL_OPERATOR.md` describes.
+> **This needs v0.1.10 or newer.** `--solo` and `--check` do not exist in
+> v0.1.9 or anything before it. If you are on an older miner, download the
+> current one from the release page before following the rest of this section.
 
 You need two things running: your own node, and the miner pointed at it.
 

@@ -122,6 +122,17 @@ if [ -n "$HOST" ]; then
     esac
 fi
 
+# The GUI ships four icon files and patch_upstream.py replaced one of them
+# until 2026-09-24. A build whose brand/generated icons are missing does not
+# fail loudly -- patch_upstream cannot find a source file and stops, which is
+# a confusing way to learn that a release was blocked by an icon.
+if "$PY" scripts/make_icons.py --check >/dev/null 2>&1; then
+    ok "the Windows and macOS icons are generated and well formed"
+else
+    bad "the GUI icons are missing or malformed -- Windows and macOS would ship
+           Bitcoin's logo on a WAM wallet. Run: $PY scripts/make_icons.py"
+fi
+
 if [ -d build/wam-core/src ] || [ -d "$HOME/wam/build/wam-core/src" ]; then
     T="build/wam-core"; [ -d "$T/src" ] || T="$HOME/wam/build/wam-core"
     if "$PY" scripts/rename_binaries.py --tree "$T" --check >/dev/null 2>&1; then

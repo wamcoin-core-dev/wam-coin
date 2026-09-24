@@ -149,6 +149,26 @@ jobs:
             cat /tmp/starterr; exit 1
           }
 
+      # The same question the Windows and macOS jobs ask, asked of the Linux
+      # tarball a stranger downloads rather than of a build tree. --solo was
+      # proved by hand on one laptop before v0.1.10; proved by hand once is
+      # proved until the next commit touches it.
+      - name: --solo mines from the packaged binaries
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          for a in out/release/wam-coin-*.tar.gz out/release/wam-miner-*.tar.gz; do
+            tar -xzf "$a" -C "$work"
+          done
+          mkdir -p "$work/bin"
+          for n in wamd wam-cli wam-miner; do
+            f="$(find "$work" -name "$n" -type f | head -1)"
+            [ -n "$f" ] || { echo "::error::no $n in the release archives"; exit 1; }
+            cp "$f" "$work/bin/"
+          done
+          chmod +x "$work/bin"/*
+          bash scripts/test/test_platform_solo.sh "$work/bin"
+
       - name: Publish the release
         if: steps.v.outputs.publish == 'yes'
         env:

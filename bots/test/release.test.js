@@ -148,8 +148,14 @@ function stubGithub(status, body) {
             tag: 'v0.1.0', name: 'WAM Coin v0.1.0', url: 'https://x/y',
             body: 'notes', prerelease: true
         }));
-        assert.ok(out.includes('<i>Pre-release — testnet software.</i>'),
+        // The wording this asserted until 2026-09-24 was "Pre-release --
+        // testnet software", which stopped being true the moment mainnet
+        // started and was then announced to every channel on three releases.
+        // GitHub's flag means pre-1.0 and nothing about which chain is live.
+        assert.ok(out.includes('<i>Pre-1.0 — the chain is live, the software is still young.</i>'),
             `a pre-release was announced as though it were stable:\n${out}`);
+        assert.ok(!/testnet/i.test(out),
+            `a mainnet release was announced as testnet software:\n${out}`);
     });
 
     await test('a stable release carries no such line', () => {
