@@ -45,6 +45,26 @@
 #  minute waiting for difficulty. --blocks makes it deterministic: the miner
 #  exits non-zero if it did not get what was asked for, so this script does
 #  not have to read the log for a phrase that may be reworded later.
+#
+#  DO NOT RUN THIS ON A HOSTED CI RUNNER.
+#
+#  On 2026-09-24 it was added to the GitHub Actions jobs for Windows, macOS
+#  and the Linux release, and it ran three times. The account was suspended
+#  within the hour, and the repository, every release download going back to
+#  v0.1.8, raw.githubusercontent.com and wamcoin.org -- which is served from
+#  GitHub Pages -- all returned 404 to the public, on a release day.
+#
+#  The chain here has no value and this proves correctness rather than earning
+#  anything. That distinction is invisible to an automated detector, and it is
+#  not the detector's job to make it: GitHub's terms forbid cryptocurrency
+#  mining on their runners, and a RandomX miner allocating a dataset and
+#  submitting blocks is what that rule describes. Reading the terms was the
+#  step that was skipped.
+#
+#  So this runs on hardware this project owns -- a developer's machine, or one
+#  of the three nodes -- and never on somebody else's. What CI is allowed to
+#  run is --check, which builds a block and asks the node to validate it while
+#  hashing nothing at all: scripts/test/test_platform_check.sh.
 # ===========================================================================
 
 set -uo pipefail

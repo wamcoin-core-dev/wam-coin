@@ -149,11 +149,20 @@ jobs:
             cat /tmp/starterr; exit 1
           }
 
-      # The same question the Windows and macOS jobs ask, asked of the Linux
-      # tarball a stranger downloads rather than of a build tree. --solo was
-      # proved by hand on one laptop before v0.1.10; proved by hand once is
-      # proved until the next commit touches it.
-      - name: --solo mines from the packaged binaries
+      # --check, which hashes NOTHING, asked of the tarball a stranger
+      # downloads rather than of a build tree.
+      #
+      # This step mined two regtest blocks when it was added on 2026-09-24,
+      # and the account was suspended within the hour: the repository, every
+      # release download back to v0.1.8, raw.githubusercontent.com and
+      # wamcoin.org all returned 404 to the public, on a release day. The
+      # chain was worthless and the intent was a correctness proof; neither is
+      # visible to an abuse detector, and GitHub's terms forbid mining on
+      # their runners whatever the chain is worth.
+      #
+      # Hashing and submission are proved by test_platform_solo.sh, on
+      # hardware this project owns.
+      - name: The packaged miner builds a block the packaged node accepts
         run: |
           set -euo pipefail
           work="$(mktemp -d)"
@@ -167,7 +176,7 @@ jobs:
             cp "$f" "$work/bin/"
           done
           chmod +x "$work/bin"/*
-          bash scripts/test/test_platform_solo.sh "$work/bin"
+          bash scripts/test/test_platform_check.sh "$work/bin"
 
       - name: Publish the release
         if: steps.v.outputs.publish == 'yes'
