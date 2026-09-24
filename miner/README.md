@@ -91,6 +91,56 @@ wam-miner -o stratum+tcp://pool.wamcoin.org:3333 -u <your WAM address>.livingroo
 | `--self-test` | verify the build against known vectors |
 | `--no-colour` | plain output for logs |
 
+## Mine alone, with no pool at all
+
+New in v0.1.10, on Linux, Windows and macOS.
+
+```bash
+wam-miner --solo -u <your WAM address> -t 4
+```
+
+That needs your own node running with `server=1` in `wam.conf`, and nothing
+else — no pool, no account, no operator, no Redis. Work comes from
+`getblocktemplate` instead of `mining.notify`, and a solution becomes a block
+instead of a share. When you find one you keep the whole 47.5 WAM rather than
+a portion, and you wait longer between them.
+
+**Ask first whether it would even work:**
+
+```bash
+wam-miner --check -u <your WAM address>
+```
+
+That builds a real block from your node's current template and asks the node
+whether it is valid. It hashes nothing, sends nothing, and answers in about a
+second. If the node accepts it, everything except the proof of work is
+correct: the coinbase, the BIP34 height, the treasury output, the witness
+commitment, the merkle root and the transactions. Two bugs were caught by
+this before a single hash was computed.
+
+| Option | Meaning |
+| --- | --- |
+| `--solo` | mine against your own node |
+| `--check` | build one block, ask the node, exit |
+| `--network <net>` | `mainnet` (default), `testnet` or `regtest` |
+| `--rpc <host:port>` | the node's RPC address. Left out, the port follows `--network`: 9554, 19554, 29554 |
+| `--rpcuser`, `--rpcpassword` | credentials from `wam.conf`. Omit both and the node's `.cookie` is read |
+| `--rpccookie <path>` | where that cookie is, if not the default |
+| `--blocks <n>` | exit after n accepted blocks. For testing; a miner does not want it |
+
+If the node is on another machine, say so — and remember its RPC has to be
+reachable from this one:
+
+```bash
+wam-miner --solo -u <address> -t 4 --rpc 192.168.1.10:9554 \
+          --rpcuser USER --rpcpassword PASSWORD
+```
+
+**Every block found this way is a separate finder in the chain's own
+records**, where everyone in one pool counts as one however many people are
+behind it. That is not an argument in this project's favour and it is
+written here anyway.
+
 ### Memory
 
 Full-memory mode allocates a 2 GiB RandomX dataset **once**, shared by every

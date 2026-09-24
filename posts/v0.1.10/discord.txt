@@ -1,0 +1,80 @@
+POST THIS IN #announcements, AS FOUR MESSAGES IN ORDER
+======================================================
+
+The bot posts the release itself the moment the tag is published — the first
+two paragraphs of the notes, automatically. These four are the other thing:
+what solo mining is for, and the fee change. Post them after the bot's
+message, not before it.
+
+--------------------------------------------------------------- 1 of 4
+
+**v0.1.10 is out, and the headline is one command.**
+
+```
+wam-miner --solo -u YOUR_ADDRESS -t 4
+```
+
+You can now mine WAM against your own node with no pool at all. No account,
+no operator, nothing between you and the chain. It needs a running wamd with
+`server=1` in `wam.conf` and nothing else.
+
+When you find a block you keep the whole 47.50 WAM instead of a share of it,
+and you wait longer between them. That is the trade, and it is yours to make.
+
+--------------------------------------------------------------- 2 of 4
+
+**Before you spend any electricity, ask whether it would work:**
+
+```
+wam-miner --check -u YOUR_ADDRESS
+```
+
+That builds a real block from your node's current template and asks your node
+whether it is valid. It hashes nothing, sends nothing, and answers in about a
+second. If the node accepts it, everything except the proof of work is right:
+the coinbase, the height encoding, the treasury output, the witness
+commitment, the merkle root and the transactions.
+
+Two bugs in this code were caught that way before a single hash was computed.
+It is the command to run first, and the one to paste here if something looks
+wrong.
+
+--------------------------------------------------------------- 3 of 4
+
+**Linux, Windows and macOS — and from this release, proved on each.**
+
+Every build now starts a regtest node, runs `--check` against it, and mines
+two blocks with `--solo` which the node must accept, with the reward arriving
+at the address given. If that fails on any of the three, no release is
+published for any of them.
+
+Before v0.1.10 both options had been proved on one Linux laptop and shipped
+to the other two untested. That is not the same thing as working, and saying
+so is cheaper than finding out from you.
+
+Full instructions for all three: https://wamcoin.org/mine
+
+--------------------------------------------------------------- 4 of 4
+
+**And a change on our side: our pool's fee goes from 0% to 1%.**
+
+We set it to 0% when pool.wamcoin.org was the only pool there was. There are
+more now, and a pool charging nothing is not really competing with the others
+— nobody can offer less than nothing. Matching their rate means you pick a
+pool for how it runs rather than for a number that cannot be beaten.
+
+```
+pool.wamcoin.org:3333             ours, 1% fee
+wam.ariabrain.com:3333
+stratum.cryptopickaxe.co.uk:6040
+```
+
+Ask their operators about their fees and payout rules — those are theirs to
+state, not ours to state for them. All three answered when this was written.
+
+The 1% is taken after the chain's 5% treasury output and goes to an address
+that receives nothing else, named on pool.wamcoin.org, so what stays in the
+pool wallet is miners' money and can be checked against what the pool says it
+owes.
+
+If you mine with us, nothing breaks and there is nothing you need to do.

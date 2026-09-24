@@ -1,0 +1,57 @@
+POST THIS AFTER THE BOT'S OWN MESSAGE, AS TWO MESSAGES
+======================================================
+
+The bot posts the release itself when the tag is published. These two are for
+what the release is for.
+
+--------------------------------------------------------------- 1 of 2
+
+*v0.1.10 is out, and the headline is one command.*
+
+`wam-miner --solo -u YOUR_ADDRESS -t 4`
+
+You can now mine WAM against your own node with no pool at all. No account,
+no operator, nothing between you and the chain. It needs a running wamd with
+`server=1` in `wam.conf` and nothing else.
+
+Find a block and you keep the whole 47.50 WAM instead of a share of it. You
+wait longer between them — that is the trade, and it is yours to make.
+
+And before spending any electricity:
+
+`wam-miner --check -u YOUR_ADDRESS`
+
+That builds a real block from your node's template and asks the node whether
+it is valid. It hashes nothing and answers in about a second. Two bugs in
+this code were caught that way before a single hash was computed.
+
+Linux, Windows and macOS. From this release every build starts a regtest node
+and mines two blocks with `--solo` that the node must accept — on all three —
+or no release is published at all.
+
+Instructions: wamcoin.org/mine
+
+--------------------------------------------------------------- 2 of 2
+
+*And a change on our side: our pool's fee goes from 0% to 1%.*
+
+We set it to 0% when pool.wamcoin.org was the only pool there was. There are
+more now, and a pool charging nothing is not really competing with the others
+— nobody can offer less than nothing. Matching their rate means you pick a
+pool for how it runs rather than for a number that cannot be beaten.
+
+```
+pool.wamcoin.org:3333             ours, 1% fee
+wam.ariabrain.com:3333
+stratum.cryptopickaxe.co.uk:6040
+```
+
+Ask their operators about their own fees and payout rules. All three answered
+when this was written.
+
+The 1% is taken after the chain's 5% treasury output and goes to an address
+that receives nothing else, named on pool.wamcoin.org — so what stays in the
+pool wallet is miners' money and can be checked against what the pool says it
+owes.
+
+If you mine with us, nothing breaks and there is nothing you need to do.

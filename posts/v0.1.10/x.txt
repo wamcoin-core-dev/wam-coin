@@ -1,0 +1,43 @@
+POST 1 — the release. 258 characters, counted not estimated.
+============================================================
+
+WAM v0.1.10: mine against your own node, with no pool at all.
+
+wam-miner --solo -u YOUR_ADDRESS
+
+Find a block, keep all 47.5 WAM.
+
+Linux, Windows and macOS — every build now proves it mines on all three
+before it ships.
+
+github.com/wam-coin-official/wam-coin
+
+
+POST 2 — optional, a day later. The fee change. 258 characters.
+===============================================================
+
+Our pool fee goes 0% → 1%, matching the other WAM pools.
+
+0% made sense when ours was the only one. There are more now, and nobody can
+compete with nothing.
+
+pool.wamcoin.org:3333
+wam.ariabrain.com:3333
+stratum.cryptopickaxe.co.uk:6040
+
+Pick one on how it runs.
+
+
+NOTES
+=====
+
+Post 1 alone if you post only one. It is the release and the invitation in the
+same breath, and it needs no second message to make sense.
+
+Do not merge the two. A release announcement that also raises a fee reads as
+a fee rise dressed up as news, and the fee has its own reasoning that does not
+fit in 280 characters.
+
+No hash rate figure and no block height in either. Both move, an X post does
+not, and a stale number is worse than no number on the one platform where the
+post outlives its own facts.

@@ -1,0 +1,116 @@
+[b]v0.1.10 — mine WAM alone, with no pool at all[/b]
+
+You can now mine WAM on your own machine against your own node. No pool, no
+account, no operator, nothing between you and the chain.
+
+[code]
+wam-miner --solo -u YOUR_ADDRESS -t 4
+[/code]
+
+It needs a running wamd with [tt]server=1[/tt] in [tt]wam.conf[/tt] and nothing
+else. Work comes from getblocktemplate instead of a stratum job, and when you
+find a block you keep the whole 47.50 WAM rather than a share of it. You wait
+longer between them: that is the trade, and it is yours to make rather than
+ours to make for you.
+
+[b]Ask whether it would work before you spend any electricity:[/b]
+
+[code]
+wam-miner --check -u YOUR_ADDRESS
+[/code]
+
+That builds a real block from your node's current template and asks your node
+whether it is valid. It hashes nothing, sends nothing, and answers in about a
+second. If the node accepts it, everything except the proof of work is
+correct: the coinbase, the height encoding, the treasury output, the witness
+commitment, the merkle root and the transactions. Two bugs in this code were
+caught that way before a single hash was computed.
+
+[b]Linux, Windows and macOS — and from this release, proved on each[/b]
+
+Every build now starts a regtest node, runs --check against it, and mines two
+blocks with --solo which the node must accept with the reward arriving at the
+address given. If that fails on any of the three platforms, no release is
+published for any of them. Before v0.1.10 these two options had been proved
+on one Linux laptop and shipped to the other two untested, which is not the
+same thing as working.
+
+[b]Our pool's fee goes from 0% to 1%[/b]
+
+There is more than one WAM pool now, and ours charged nothing while it was the
+only one there was. A pool charging nothing is not competing with the others —
+nobody can offer less than nothing. Matching their rate means a miner picks a
+pool for how it runs rather than for a number that cannot be beaten. The 1% is
+taken after the chain's 5% treasury output and goes to an address that
+receives nothing else, named on the pool's own page.
+
+[code]
+pool.wamcoin.org:3333             run by this project, 1% fee
+wam.ariabrain.com:3333
+stratum.cryptopickaxe.co.uk:6040
+[/code]
+
+Ask their operators about their own fees and payout rules. All three answered
+when this was written.
+
+[b]Also fixed in this release[/b]
+
+The Windows and macOS builds carried Bitcoin's logo. Four icon files ship with
+the GUI and the rename replaced one of them, so since v0.1.8 the window, the
+taskbar, the dock and the executable itself showed the wrong mark on a wallet
+holding real coins. All four are now generated from one master and checked
+before a release can be cut.
+
+The miner reached for the mainnet RPC port whatever --network said, so mining
+alone on testnet or regtest failed with "could not connect" — which reads as
+"your node is not running" to somebody whose node is running perfectly, on
+another port.
+
+The mining pool credited a block one block before its coin could be spent.
+COINBASE_MATURITY is 100 and a coinbase becomes spendable at 101, so the pool
+believed it held 47.5 WAM more than the node would let it send. Nothing was
+lost and nobody was paid twice — the books reconcile to 0.1 WAM of accumulated
+transaction fees — but payouts drifted from every ten minutes to every twenty
+or forty. It was found by measuring the pool's own logs, not by a complaint.
+
+[b]This release is NOT mandatory.[/b] No consensus rule changed. A v0.1.9 node
+validates exactly the same blocks, stays on the same chain and is in no
+danger. Upgrade when it suits you; if you want to mine alone, that is the
+reason to.
+
+[b]The chain, measured at 2026-09-24T10:12:57Z rather than recalled[/b]
+
+[code]
+height                6,491
+difficulty            0.008814
+network hash rate     235,579 H/s  (over the last 720 blocks, about a day)
+peers                 50
+mined to miners       308,322.50 WAM
+circulating           2,324,550 of a 22,000,000 cap  (10.57%)
+[/code]
+
+Read those yourself at explorer.wamcoin.org rather than believing this post.
+The hash rate roughly doubles between the quietest hour of the night and the
+busiest of the morning, so the figure above is a day's average and not a peak.
+
+[b]Verify the download. The signature is the point.[/b]
+
+[code]
+gpg --import SIGNING-KEY.asc
+bash verify_release.sh .
+[/code]
+
+A checksum file on its own protects against a corrupted download and nothing
+else — whoever can replace the binary can replace the list beside it. The
+signature is what a stranger cannot forge.
+
+The fingerprint to check it against lives in one place and no other — not in
+an email, not in a chat message, and not in a copy of the repository hosted
+somewhere else:
+
+https://github.com/wam-coin-official/wam-coin/blob/main/SECURITY.md
+
+Downloads, source and full notes:
+https://github.com/wam-coin-official/wam-coin/releases/tag/v0.1.10
+
+Mining instructions for all three platforms: https://wamcoin.org/mine
