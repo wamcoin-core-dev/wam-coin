@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+# Copyright (c) 2026 The WAM Coin developers
+# Distributed under the MIT software license, see COPYING.
+#
+# ===========================================================================
+#  wam-accept-cert -- receive a renewed certificate, on a host that does not
+#                     and cannot issue one
+# ===========================================================================
+#
+#  Installed at /usr/local/bin/wam-accept-cert on every host that serves
+#  wamcoin.org but is NOT the ACME host. It is the forced command on the
+#  ACME host's key in /root/.ssh/authorized_keys:
+#
+#      command="/usr/local/bin/wam-accept-cert",no-agent-forwarding,
+#      no-port-forwarding,no-pty,no-X11-forwarding ssh-ed25519 AAAA...
+#
+#  WHY A FORCED COMMAND AND NOT A SHELL
+#
+#  Certificate renewal has to be automatic or it does not happen: nobody
+#  remembers a task due in sixty days, and the failure is a browser warning
+#  on the project's front page. Automatic means one machine can log into
+#  another without a human, and that is a standing hole unless it is narrowed
+#  to the one thing it exists for.
+#
+#  With this as the forced command, a key stolen from the ACME host can
+#  deliver a certificate to this one and do nothing else. No shell, no port
+#  forward, no other path. The worst it can do is install a bad certificate,
+#  which breaks TLS visibly and destroys nothing -- and this script refuses
+#  one that is not a certificate, or whose private key does not match it.
+#
+#  WHY THE CERTIFICATE IS COPIED AT ALL
+#
+#  wamcoin.org has an A record for every host that serves it, so Let's
+#  Encrypt verifies ownership against ONE of them at random. Only the host
+#  where certbot runs holds the challenge token, so only that host can renew.
+#  Every other host proxies /.well-known/acme-challenge/ to it and receives
+#  the result here.
+#
+#  It reads a tar of fullchain.pem and privkey.pem on stdin, checks them, and
+#  installs them only if both are sound. A half-written certificate is worse
+#  than an expired one: expired is a warning a visitor can reason about, and
+#  truncated is a connection that fails with nothing to read.
+# ===========================================================================
+
+set -uo pipefail
+
+DEST=/etc/ssl/wamcoin.org
+STAGE="$(mktemp -d /tmp/wamcert.XXXXXX)"
+trap 'rm -rf "$STAGE"' EXIT
+
+log() { printf '%s wam-accept-cert: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1" >&2; }
+
+# Read the tar from stdin into a staging directory. Nothing is written to
+# DEST until every check below has passed.
+if ! tar -xzf - -C "$STAGE" 2>/dev/null; then
+    log "the input was not a readable tar -- nothing was changed"
+    exit 2
+fi
+
+FULL="$STAGE/fullchain.pem"
+KEY="$STAGE/privkey.pem"
+
+for f in "$FULL" "$KEY"; do
+    if [ ! -s "$f" ]; then
+        log "missing or empty: $(basename "$f") -- nothing was changed"
+        exit 2
+    fi
+done
+
+# Is it a certificate at all, and is it for this domain?
+if ! openssl x509 -in "$FULL" -noout >/dev/null 2>&1; then
+    log "fullchain.pem is not a certificate -- nothing was changed"
+    exit 2
+fi
+if ! openssl x509 -in "$FULL" -noout -text | grep -q 'wamcoin\.org'; then
+    log "the certificate does not mention wamcoin.org -- nothing was changed"
+    exit 2
+fi
+
+# Does the private key belong to it? A mismatched pair makes nginx refuse to
+# start, which on a reload means the old configuration keeps running and the
+# operator never finds out until a restart.
+cert_pub="$(openssl x509 -in "$FULL" -noout -pubkey 2>/dev/null | openssl md5)"
+key_pub="$(openssl pkey -in "$KEY" -pubout 2>/dev/null | openssl md5)"
+if [ -z "$cert_pub" ] || [ "$cert_pub" != "$key_pub" ]; then
+    log "the private key does not match the certificate -- nothing was changed"
+    exit 2
+fi
+
+# Never go backwards. A replay of an older certificate, or a mistake on the
+# sending side, must not shorten the life of what is installed.
+if [ -s "$DEST/fullchain.pem" ]; then
+    new_end="$(date -d "$(openssl x509 -in "$FULL" -noout -enddate | cut -d= -f2)" +%s 2>/dev/null || echo 0)"
+    old_end="$(date -d "$(openssl x509 -in "$DEST/fullchain.pem" -noout -enddate | cut -d= -f2)" +%s 2>/dev/null || echo 0)"
+    if [ "$new_end" -le "$old_end" ]; then
+        log "the offered certificate expires no later than the installed one -- keeping what is here"
+        exit 0
+    fi
+fi
+
+mkdir -p "$DEST"
+install -m 644 "$FULL" "$DEST/fullchain.pem.new"
+install -m 600 "$KEY"  "$DEST/privkey.pem.new"
+
+# nginx is asked whether it accepts the pair BEFORE either file replaces the
+# one in use, by testing a configuration that points at the new names.
+TESTCONF="$(mktemp /tmp/wamnginx.XXXXXX.conf)"
+sed -e "s#$DEST/fullchain.pem#$DEST/fullchain.pem.new#" \
+    -e "s#$DEST/privkey.pem#$DEST/privkey.pem.new#" \
+    /etc/nginx/sites-available/wamcoin.org > "$TESTCONF"
+cp /etc/nginx/sites-available/wamcoin.org "$DEST/.wamcoin.org.bak"
+cp "$TESTCONF" /etc/nginx/sites-available/wamcoin.org
+if ! nginx -t >/dev/null 2>&1; then
+    cp "$DEST/.wamcoin.org.bak" /etc/nginx/sites-available/wamcoin.org
+    rm -f "$DEST/fullchain.pem.new" "$DEST/privkey.pem.new" "$TESTCONF"
+    log "nginx rejected the new certificate -- the old one is still serving"
+    exit 2
+fi
+cp "$DEST/.wamcoin.org.bak" /etc/nginx/sites-available/wamcoin.org
+rm -f "$TESTCONF"
+
+mv "$DEST/fullchain.pem.new" "$DEST/fullchain.pem"
+mv "$DEST/privkey.pem.new"   "$DEST/privkey.pem"
+
+if nginx -t >/dev/null 2>&1 && systemctl reload nginx; then
+    log "installed, valid until $(openssl x509 -in "$DEST/fullchain.pem" -noout -enddate | cut -d= -f2)"
+    exit 0
+fi
+
+log "installed but nginx would not reload -- LOOK AT THIS HOST"
+exit 1

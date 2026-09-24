@@ -43,7 +43,7 @@ Log out and back in as `wam`. Everything after this is done as that user.
 ## 2. Harden the machine
 
 ```bash
-git clone https://github.com/wam-coin-official/wam-coin.git
+git clone https://gitlab.com/WAMCoin/wam-coin.git
 cd wam-coin
 sudo bash scripts/harden_server.sh --network testnet
 ```

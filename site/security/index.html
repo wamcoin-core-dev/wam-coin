@@ -68,7 +68,7 @@ hr{border:0;border-top:1px solid var(--rule);margin:2.2rem 0}
   <a href="/build/">build</a>
   <a href="/pool/">pool</a>
   <a href="/rehearsals/">rehearsals</a>
-  <a href="https://github.com/wam-coin-official/wam-coin/blob/main/SECURITY.md">source</a>
+  <a href="https://gitlab.com/WAMCoin/wam-coin/-/blob/main/SECURITY.md">source</a>
 </nav>
 <h1 id="reporting-a-security-issue">Reporting a security issue</h1>
 <p><strong>Email: wam.coin.official@proton.me</strong></p>
@@ -95,7 +95,7 @@ hr{border:0;border-top:1px solid var(--rule);margin:2.2rem 0}
 <p>Check it rather than believe it, from any node:</p>
 <p>    wam-cli scantxoutset start '["addr(WdMMqW1DcgWZ6HtyJuEMdce6QkKg4raGmE)"]'</p>
 <p>At height 4,989 that returned 4,788 unspent outputs totalling 11,972.49400520 WAM. One output per block, and it accrues 1,800 WAM per day.</p>
-<p><strong>It has moved once.</strong> This paragraph said "the treasury has never moved a coin since block 1", and that was true until 2026-09-22, when 500 WAM went to a GLEEC maintainer so he could run an atomic-swap test on a pull request he had opened and fixed himself. Not a listing fee — none was asked for and none was paid. Every coin that leaves the treasury is recorded with its amount, its reason and its transaction id in <a href="https://github.com/wam-coin-official/wam-coin/blob/main/docs/TREASURY_LEDGER.md">docs/TREASURY_LEDGER.md</a>, and the balance above can be checked against the chain with the command above rather than believed.</p>
+<p><strong>It has moved once.</strong> This paragraph said "the treasury has never moved a coin since block 1", and that was true until 2026-09-22, when 500 WAM went to a GLEEC maintainer so he could run an atomic-swap test on a pull request he had opened and fixed himself. Not a listing fee — none was asked for and none was paid. Every coin that leaves the treasury is recorded with its amount, its reason and its transaction id in <a href="https://gitlab.com/WAMCoin/wam-coin/-/blob/main/docs/TREASURY_LEDGER.md">docs/TREASURY_LEDGER.md</a>, and the balance above can be checked against the chain with the command above rather than believed.</p>
 <p><strong>The source changed, and this is the record of it.</strong> The announcement on BitcoinTalk said the tiers would be paid "from the founder reserve". That reserve is locked by consensus until 2027-09-15 — five outputs of 400,000 WAM behind OP_CHECKLOCKTIMEVERIFY in the genesis coinbase, readable with <code>wam-cli getblock $(wam-cli getblockhash 0) 2</code> — so it cannot pay anything today, and the founder has committed in public not to pay from it in any case. Until 17 September this file said the new source "has not yet been decided" while the project was telling a reviewer by email that it was the treasury. He found the contradiction and asked for the public reference. He was right to.</p>
 <p><strong>The ceiling.</strong> The treasury is 750,000 WAM over its entire life and then nothing. That is the hard limit of what this programme can ever pay from this source: one 50,000 finding is payable, several of them quickly are not.</p>
 <p><strong>Priority is the order of validation</strong> — first validated, first paid. A rule rather than a judgement, because the alternative is a queue whose order the payer decides.</p>
@@ -115,7 +115,7 @@ hr{border:0;border-top:1px solid var(--rule);margin:2.2rem 0}
 <pre><code>4BD4 A8D3 AFD4 3F5C BCB5  00E2 3798 462F E00A DBA4</code></pre>
 <pre><code>WAM Coin (release signing) &lt;wam.coin.official@proton.me&gt;
 RSA 4096 · created 2026-09-03 · expires 2031-09-02</code></pre>
-<p>The public key is <a href="https://github.com/wam-coin-official/wam-coin/blob/main/SIGNING-KEY.asc">SIGNING-KEY.asc</a> in this repository.</p>
+<p>The public key is <a href="https://gitlab.com/WAMCoin/wam-coin/-/blob/main/SIGNING-KEY.asc">SIGNING-KEY.asc</a> in this repository.</p>
 <p><strong>Anyone quoting a WAM fingerprint from anywhere other than this file is quoting an invention.</strong> Not from an email, not from a chat message, not from a forum post, and not from a copy of this repository hosted somewhere else. Check it at https://wamcoin.org/security/, over HTTPS, on a domain this project controls -- not on a service that can take it away.</p>
 <h3 id="what-it-signs-and-what-that-is-worth">What it signs, and what that is worth</h3>
 <p>Every release carries <code>SHA256SUMS</code> and <code>SHA256SUMS.asc</code>. The first lists the hash of each file; the second is a signature over that list.</p>
@@ -127,7 +127,7 @@ curl -LO https://wamcoin.org/downloads/v0.1.9/SHA256SUMS.asc
 curl -LO https://wamcoin.org/verify_release.sh
 curl -LO https://wamcoin.org/SIGNING-KEY.asc
 bash verify_release.sh .</code></pre>
-<p>or run <a href="https://github.com/wam-coin-official/wam-coin/blob/main/scripts/verify_release.sh">scripts/verify_release.sh</a>, which does the three and refuses to say "ok" unless all three pass.</p>
+<p>or run <a href="https://gitlab.com/WAMCoin/wam-coin/-/blob/main/scripts/verify_release.sh">scripts/verify_release.sh</a>, which does the three and refuses to say "ok" unless all three pass.</p>
 <p><code>gpg --verify</code> printing <code>Good signature</code> with a <code>WARNING: This key is not certified with a trusted signature</code> is the normal and expected result. It means the signature is genuine and that you have not personally vouched for the key — which nobody should, on first contact. The fingerprint above is what you check instead.</p>
 <h3 id="the-key-is-not-on-any-server-this-project-runs">The key is not on any server this project runs</h3>
 <p>It was generated on the founder's own machine and exists in two places: that machine, and an offline backup. No node, no seed, no pool and no build server has ever held it. A server that is compromised cannot be used to sign a release, which is the entire point of keeping it off them.</p>

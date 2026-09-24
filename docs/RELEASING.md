@@ -45,7 +45,7 @@ const { toDiscord } = require('./bots/lib/markup.js');
 const txt = require('fs').readFileSync('posts/v0.1.10/TAG_MESSAGE.txt','utf8');
 const body = txt.split('-'.repeat(78))[1].replace(/^\n+/, '');
 console.log(toDiscord(A.releaseMessage({ tag:'v0.1.10', name:'WAM Coin v0.1.10',
-  url:'https://github.com/wam-coin-official/wam-coin/releases/tag/v0.1.10',
+  url:'https://wamcoin.org/downloads/',
   body, prerelease:true })));
 "
 ```

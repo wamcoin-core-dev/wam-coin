@@ -60,7 +60,13 @@ import re
 import sys
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
-GITHUB = "https://github.com/wam-coin-official/wam-coin/blob/main/"
+# Where "read the source of this page" points.
+#
+# It was GitHub until 2026-09-24, when the account was suspended and every
+# one of these links on every page became a 404 -- including the ones telling
+# a reader where to check the signing fingerprint for himself. The canonical
+# repository is GitLab now; GitHub is a mirror if it ever returns.
+SOURCE_BROWSE = "https://gitlab.com/WAMCoin/wam-coin/-/blob/main/"
 
 # source, output dir, lang, dir, title, meta description, og description
 PAGES = [
@@ -197,8 +203,8 @@ def resolve_link(target, src):
     if path in LINKMAP:
         return LINKMAP[path] + frag
     if path.endswith(".md"):
-        return GITHUB + path + frag
-    return GITHUB + path + frag if "/" in path or "." in path else target + frag
+        return SOURCE_BROWSE + path + frag
+    return SOURCE_BROWSE + path + frag if "/" in path or "." in path else target + frag
 
 
 def inline(s, src):
@@ -370,7 +376,7 @@ def build(src, outdir, lang, direction, title, desc, og_desc):
 
     path = "/" + outdir.split("/", 1)[1] + "/"
     nav = "\n  ".join(f'<a href="{h}">{esc(t)}</a>' for h, t in nav_links(path, lang))
-    nav += f'\n  <a href="{GITHUB}{src}">{esc("source" if lang == "en" else "المصدر")}</a>'
+    nav += f'\n  <a href="{SOURCE_BROWSE}{src}">{esc("source" if lang == "en" else "المصدر")}</a>'
 
     note = (f"This page is generated from {src} in the repository. "
             "It is the same text; nothing here is written twice."

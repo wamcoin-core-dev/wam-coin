@@ -158,7 +158,7 @@ until block 400,000. A block that omits it is rejected. Miners receive 47.5
 WAM per block until that height and 50 after it.
 
 Source, and everything above is checkable in it:
-https://github.com/wam-coin-official/wam-coin
+https://gitlab.com/WAMCoin/wam-coin
 
 Happy to supply a node, a testnet endpoint, or anything else that helps the
 review.

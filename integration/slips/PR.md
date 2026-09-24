@@ -23,7 +23,7 @@ SLIP-0173
 wam, twam and wamrt for mainnet, testnet and regtest. None appears among the
 registered prefixes.
 
-Source:   https://github.com/wam-coin-official/wam-coin
+Source:   https://gitlab.com/WAMCoin/wam-coin
 Explorer: https://explorer.wamcoin.org
 
 Mainnet launches 2026-09-15. Both values are being registered before the first

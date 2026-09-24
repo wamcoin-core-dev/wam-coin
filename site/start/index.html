@@ -68,7 +68,7 @@ hr{border:0;border-top:1px solid var(--rule);margin:2.2rem 0}
   <a href="/build/">build</a>
   <a href="/pool/">pool</a>
   <a href="/rehearsals/">rehearsals</a>
-  <a href="https://github.com/wam-coin-official/wam-coin/blob/main/docs/START_HERE.md">source</a>
+  <a href="https://gitlab.com/WAMCoin/wam-coin/-/blob/main/docs/START_HERE.md">source</a>
 </nav>
 <h1 id="start-here">Start here</h1>
 <p><strong><a href="/start-ar/">بالعربية</a></strong></p>
@@ -211,7 +211,7 @@ chmod +x wam-miner</code></pre>
 <p>Proof of work is RandomX over Bitcoin's 80-byte header. Everything else — the transaction format, the script language, SegWit, PSBT — is Bitcoin Core v28.1, because 250,000 lines that have been attacked for fifteen years are safer than anything rewritten from scratch.</p>
 <hr>
 <h2 id="stay-told-about-releases">Stay told about releases</h2>
-<p>Subscribe to releases on the repository: <strong><a href="https://github.com/wam-coin-official/wam-coin">github.com/wam-coin-official/wam-coin</a></strong> → <strong>Watch ▾</strong> → <strong>Custom</strong> → <strong>Releases</strong> ✓</p>
+<p>Subscribe to releases on the repository: <strong><a href="https://gitlab.com/WAMCoin/wam-coin">gitlab.com/WAMCoin/wam-coin</a></strong> → <strong>Watch ▾</strong> → <strong>Custom</strong> → <strong>Releases</strong> ✓</p>
 <p>This matters more than it sounds. WAM is pre-launch, and some releases change a consensus rule — v0.1.5 moved the mainnet treasury address, and a node left on v0.1.4 will reject every valid block on launch day and fork itself off the network at height 1.</p>
 <p>Your node does eventually notice. Core raises a warning once the chain it is rejecting is about six blocks of work ahead — roughly twelve minutes, at two-minute blocks — and says so:</p>
 <pre><code>Warning: We do not appear to fully agree with our peers!

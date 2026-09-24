@@ -222,7 +222,7 @@ sudo apt update && sudo apt install -y build-essential libtool autotools-dev   a
 sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
 sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
 
-git clone https://github.com/wam-coin-official/wam-coin.git ~/wam-coin
+git clone https://gitlab.com/WAMCoin/wam-coin.git ~/wam-coin
 cd ~/wam-coin
 bash scripts/fetch-upstream.sh
 bash scripts/build_windows.sh
@@ -271,7 +271,7 @@ Xcode's command line tools, and five things from Homebrew:
 xcode-select --install
 brew install cmake autoconf automake libtool pkg-config
 
-git clone https://github.com/wam-coin-official/wam-coin.git ~/wam-coin
+git clone https://gitlab.com/WAMCoin/wam-coin.git ~/wam-coin
 cd ~/wam-coin
 bash scripts/fetch-upstream.sh
 bash scripts/build_macos.sh

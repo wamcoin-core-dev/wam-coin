@@ -18,7 +18,7 @@ projection — the parameters are final and already committed to source.
 | Consensus | Proof of work, **RandomX** (CPU) |
 | Base | Bitcoin Core v28.1 fork |
 | Licence | MIT |
-| Source | https://github.com/wam-coin-official/wam-coin |
+| Source | https://gitlab.com/WAMCoin/wam-coin |
 | Website | https://wamcoin.org |
 | Explorer | https://explorer.wamcoin.org |
 | Contact | wam.coin.official@proton.me |
@@ -156,7 +156,7 @@ blocks with a 64-block lag on mainnet.
 
 Releases, with SHA256SUMS, are published at:
 
-    https://github.com/wam-coin-official/wam-coin/releases
+    https://wamcoin.org/downloads/
 
 Built by GitHub Actions from the tagged commit on ubuntu-22.04, so the binaries
 run on Ubuntu 22.04 and newer; the workflow is `.github/workflows/release.yml`

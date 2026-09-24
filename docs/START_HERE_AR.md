@@ -480,7 +480,7 @@ stats    3.41 kH/s   accepted 20  rejected 0  blocks 1
 ## ابقَ على علمٍ بالإصدارات
 
 اشترك في إشعارات الإصدارات على المستودع:
-**[github.com/wam-coin-official/wam-coin](https://github.com/wam-coin-official/wam-coin)**
+**[gitlab.com/WAMCoin/wam-coin](https://gitlab.com/WAMCoin/wam-coin)**
 ← **Watch ▾** ← **Custom** ← **Releases** ✓
 
 وهذا أهمّ ممّا يبدو. WAM قبل الإطلاق، وبعض الإصدارات تُغيّر **قاعدة إجماع** —

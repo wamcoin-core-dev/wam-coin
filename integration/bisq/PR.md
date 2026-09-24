@@ -15,7 +15,7 @@ whose version byte differs, a bc1 address whose hrp differs, a testnet twam1
 address that must not validate as mainnet, and a valid address with its last
 character changed so the checksum has to catch it.
 
-Source:   https://github.com/wam-coin-official/wam-coin
+Source:   https://gitlab.com/WAMCoin/wam-coin
 Explorer: https://explorer.wamcoin.org
 
 The chain has not launched yet; mainnet is scheduled for 2026-09-15. Happy to

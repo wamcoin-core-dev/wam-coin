@@ -24,9 +24,9 @@ satoshis a byte is ten times what a WAM node requires to relay.
 dir_name_linux and conf_name were read off a running node (~/.wam, wam.conf)
 rather than assumed from the coin's name.
 
-Source:   https://github.com/wam-coin-official/wam-coin
+Source:   https://gitlab.com/WAMCoin/wam-coin
 Explorer: https://explorer.wamcoin.org
-Releases: https://github.com/wam-coin-official/wam-coin/releases
+Releases: https://wamcoin.org/downloads/
 
 Mainnet is scheduled for 2026-09-15, so the chain these configs describe has no
 blocks yet. Happy to hold this open until it does.

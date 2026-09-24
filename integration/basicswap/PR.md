@@ -27,7 +27,7 @@ The number is decided in one place, `WAM_BIP44_COIN_TYPE` in
 `src/wam/wam-params.h`, and `scripts/audit_repo.sh` rejects any file in this
 submission that disagrees with it.
 
-Source:   https://github.com/wam-coin-official/wam-coin
+Source:   https://gitlab.com/WAMCoin/wam-coin
 Explorer: https://explorer.wamcoin.org
 
 Mainnet is scheduled for 2026-09-15.

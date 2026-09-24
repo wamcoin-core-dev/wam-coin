@@ -68,7 +68,7 @@ hr{border:0;border-top:1px solid var(--rule);margin:2.2rem 0}
   <a href="/security/">security</a>
   <a href="/pool/">pool</a>
   <a href="/rehearsals/">rehearsals</a>
-  <a href="https://github.com/wam-coin-official/wam-coin/blob/main/docs/BUILD.md">source</a>
+  <a href="https://gitlab.com/WAMCoin/wam-coin/-/blob/main/docs/BUILD.md">source</a>
 </nav>
 <h1 id="building-wam-coin-from-source">Building WAM Coin from source</h1>
 <p><code>./install.sh</code> does everything below automatically on Ubuntu 22.04 and 24.04. This document is for other distributions, for CI, and for anyone who wants to know what the installer is doing.</p>
@@ -159,7 +159,7 @@ RANDOMX_LIB="$PWD/../../build/randomx/build/librandomx.a" \
 sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
 sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
 
-git clone https://github.com/wam-coin-official/wam-coin.git ~/wam-coin
+git clone https://gitlab.com/WAMCoin/wam-coin.git ~/wam-coin
 cd ~/wam-coin
 bash scripts/fetch-upstream.sh
 bash scripts/build_windows.sh</code></pre>
@@ -177,7 +177,7 @@ bash scripts/build_windows.sh</code></pre>
 <pre><code>xcode-select --install
 brew install cmake autoconf automake libtool pkg-config
 
-git clone https://github.com/wam-coin-official/wam-coin.git ~/wam-coin
+git clone https://gitlab.com/WAMCoin/wam-coin.git ~/wam-coin
 cd ~/wam-coin
 bash scripts/fetch-upstream.sh
 bash scripts/build_macos.sh</code></pre>

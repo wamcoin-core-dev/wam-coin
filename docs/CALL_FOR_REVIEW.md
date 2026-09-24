@@ -95,7 +95,7 @@ price.
 > **1. Run a node, or point a CPU at the testnet pool.** It takes about five
 > minutes, costs nothing, and the guide is written for someone who has never
 > done it — every command, and what each number on screen means.
-> <https://github.com/wam-coin-official/wam-coin/blob/main/docs/START_HERE.md>
+> <https://gitlab.com/WAMCoin/wam-coin/-/blob/main/docs/START_HERE.md>
 >
 > **2. Read the consensus code.** Two developers outside the project have
 > reviewed it and found two real security holes — a Redis instance reachable
@@ -105,14 +105,14 @@ price.
 > bounty, and `SECURITY.md` says why in one paragraph — what it offers instead
 > is an answer from someone who read the report, credit, a fix, and
 > publication in full:
-> <https://github.com/wam-coin-official/wam-coin/blob/main/SECURITY.md>
+> <https://gitlab.com/WAMCoin/wam-coin/-/blob/main/SECURITY.md>
 >
 > **What I am not asking for:** money, or attention for a price. There is no
 > price. Testnet coins are worth nothing and cannot become real coins — the
 > testnet has already been wiped and restarted twice this month, once because a
 > consensus rule changed underneath blocks that had already been mined.
 >
-> Source: <https://github.com/wam-coin-official/wam-coin>
+> Source: <https://gitlab.com/WAMCoin/wam-coin>
 > Explorer: <https://explorer.wamcoin.org>
 
 ---
@@ -132,19 +132,19 @@ price.
 >
 > **١. شغّل عقدة، أو وجّه معالجاً إلى مجمّع الاختبار.** يأخذ خمس دقائق ولا يكلّف
 > شيئاً، والدليل مكتوب لمن لم يفعلها قط — كل أمر، ومعنى كل رقم يظهر على الشاشة.
-> <https://github.com/wam-coin-official/wam-coin/blob/main/docs/START_HERE_AR.md>
+> <https://gitlab.com/WAMCoin/wam-coin/-/blob/main/docs/START_HERE_AR.md>
 >
 > **٢. اقرأ شيفرة الإجماع.** راجعها مطوّران من خارج المشروع فوجدا ثغرتين
 > أمنيتين حقيقيتين — Redis يُقرأ بلا كلمة مرور، وسباق في حساب الحصص. عولجتا،
 > والمراسلة كاملة في المستودع. ولم يُدفَع لأحد ليُدقّق تغييرات الإجماع، وهي
 > الجزء الذي يكلّف الخطأ فيه أكثر من غيره. وعليه مكافأة:
-> <https://github.com/wam-coin-official/wam-coin/blob/main/SECURITY.md>
+> <https://gitlab.com/WAMCoin/wam-coin/-/blob/main/SECURITY.md>
 >
 > **وما لا أطلبه:** مالاً، ولا اهتماماً من أجل سعر. لا يوجد سعر. وعملات
 > الاختبار لا تساوي شيئاً ولا يمكن أن تصير حقيقية — وقد مُسحت شبكة الاختبار
 > وأُعيدت مرّتين هذا الشهر، مرّةً لأن قاعدة إجماع تغيّرت تحت كتلٍ كانت قد عُدّنت.
 >
-> المصدر: <https://github.com/wam-coin-official/wam-coin>
+> المصدر: <https://gitlab.com/WAMCoin/wam-coin>
 > المستكشف: <https://explorer.wamcoin.org>
 
 ---

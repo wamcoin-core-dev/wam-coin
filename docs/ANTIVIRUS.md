@@ -86,7 +86,7 @@ answer would not apply to what people download. Text to paste:
 > RandomX proof-of-work cryptocurrency. It is detected as
 > Trojan:Win32/Bearfoos.A!ml and it is a false positive.
 >
-> The complete source is at https://github.com/wam-coin-official/wam-coin
+> The complete source is at https://gitlab.com/WAMCoin/wam-coin
 > (MIT licence), the miner is the single translation unit under miner/src/,
 > and the binary is produced by the platform-build workflow in that
 > repository, whose logs are public.

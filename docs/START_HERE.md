@@ -519,7 +519,7 @@ anything rewritten from scratch.
 ## Stay told about releases
 
 Subscribe to releases on the repository:
-**[github.com/wam-coin-official/wam-coin](https://github.com/wam-coin-official/wam-coin)**
+**[gitlab.com/WAMCoin/wam-coin](https://gitlab.com/WAMCoin/wam-coin)**
 → **Watch ▾** → **Custom** → **Releases** ✓
 
 This matters more than it sounds. WAM is pre-launch, and some releases change

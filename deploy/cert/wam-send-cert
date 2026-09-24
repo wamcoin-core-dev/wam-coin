@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# Copyright (c) 2026 The WAM Coin developers
+# Distributed under the MIT software license, see COPYING.
+#
+# ===========================================================================
+#  wam-send-cert -- hand the renewed certificate to every other host
+# ===========================================================================
+#
+#  Installed at /usr/local/bin/wam-send-cert on the ACME host, and run by
+#  certbot after every successful renewal:
+#
+#      /etc/letsencrypt/renewal-hooks/deploy/wam-send-cert
+#
+#  certbot runs the deploy hooks only when a certificate was actually
+#  renewed, so this is silent on the many days when there is nothing to do.
+#
+#  WHY IT IS NEEDED
+#
+#  wamcoin.org has an A record for every host that serves it -- that is what
+#  makes losing one of them survivable. It also means Let's Encrypt verifies
+#  ownership against one of those addresses at random, and only the host
+#  where certbot runs holds the challenge token. So one host renews and the
+#  rest are given the result. Each of them proxies
+#  /.well-known/acme-challenge/ back to this one, which is what makes the
+#  renewal succeed whichever address the CA happens to ask.
+#
+#  The receiving end is wam-accept-cert, set as the forced command on this
+#  host's key there: it checks the certificate, checks that the private key
+#  matches it, refuses anything older than what is installed, asks nginx
+#  before replacing the files in use, and can do nothing else.
+#
+#  A HOST THAT CANNOT BE REACHED IS REPORTED, NOT FATAL
+#
+#  If France is down at renewal time, the certificate on this host is still
+#  renewed and still served. The failure is logged loudly and the next
+#  renewal will deliver it. Refusing to renew here because another machine is
+#  unreachable would turn one host's outage into two.
+# ===========================================================================
+
+set -uo pipefail
+
+# Every host that serves wamcoin.org except this one.
+PEERS="${WAM_CERT_PEERS:-169.58.159.165}"
+
+LIVE=/etc/letsencrypt/live/wamcoin.org
+log() { printf '%s wam-send-cert: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1"; }
+
+for f in fullchain.pem privkey.pem; do
+    if [ ! -s "$LIVE/$f" ]; then
+        log "no $f in $LIVE -- nothing to send"
+        exit 1
+    fi
+done
+
+BUNDLE="$(mktemp /tmp/wamcert.XXXXXX.tgz)"
+trap 'rm -f "$BUNDLE"' EXIT
+
+# -h dereferences: the files under live/ are symlinks into archive/, and a tar
+# of symlinks arrives as four dangling links and no certificate. That exact
+# mistake was made by hand on 2026-09-24 and cost ten minutes of confusion.
+if ! tar -czhf "$BUNDLE" -C "$LIVE" fullchain.pem privkey.pem; then
+    log "could not build the bundle"
+    exit 1
+fi
+
+rc=0
+for host in $PEERS; do
+    if ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+           -o ConnectTimeout=20 "root@$host" < "$BUNDLE"; then
+        log "$host accepted it"
+    else
+        log "$host DID NOT take it -- this host is still serving a good certificate, the other may not be"
+        rc=1
+    fi
+done
+exit "$rc"
