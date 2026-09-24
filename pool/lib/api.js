@@ -321,7 +321,13 @@ class ApiServer {
                     // mentioned protects nobody.
                     tls: Boolean(p.tls)
                 })),
-                stratumHost: this.config.publicHost || null
+                stratumHost: this.config.publicHost || null,
+                // Where the operator's fee goes, so that "1%" is a thing
+                // anybody can follow to an address instead of a number they
+                // are asked to believe. Null when no address is configured,
+                // which the page reads as "the fee stays in the pool wallet"
+                // -- the honest description of that state, not a blank.
+                poolFeeAddress: this.config.poolFeeAddress || null
             },
             updatedAt: Date.now()
         };

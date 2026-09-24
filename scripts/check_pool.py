@@ -97,6 +97,28 @@ def node_height(host, network):
     return int(out) if p.returncode == 0 and out.isdigit() else None
 
 
+def pool_wallet(host, network):
+    """What the pool's own wallet holds, spendable and still maturing.
+
+    Returned in base units, or None if it could not be read. None is not
+    zero and must never be treated as one: a wallet that cannot be read is
+    an unknown, and reporting an unknown as solvent is the failure this
+    whole file was written about.
+    """
+    flag = _wamcli_flags(network)
+    p = subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15",
+                        f"root@{host}", f"wam-cli {flag} getbalances"],
+                       capture_output=True, text=True, timeout=60)
+    if p.returncode != 0:
+        return None
+    try:
+        mine = json.loads(p.stdout)["mine"]
+        return (round(float(mine["trusted"]) * COIN),
+                round(float(mine.get("immature", 0)) * COIN))
+    except Exception:
+        return None
+
+
 # ---------------------------------------------------------------------------
 def stratum_job(host, port, address, timeout=25, use_tls=False):
 # ---------------------------------------------------------------------------
@@ -347,6 +369,46 @@ def main():
                 ok(f"last payment {age/60:.0f} minute(s) ago, owed {owed/COIN:.2f} WAM")
         elif owed >= minimum > 0:
             bad(f"owed {owed/COIN:.2f} WAM with no payment record at all")
+
+    # --- can it pay what it says it owes? ---------------------------------
+    #
+    # Every other check here asks whether the pool paid. This one asks
+    # whether it still can, which is the question a miner would ask first if
+    # he could. The pool's wallet holds two things that are not the same
+    # money: coin owed to miners, and the operator's accrued fee. While both
+    # sit in one wallet, nobody outside can tell them apart, and "the pool is
+    # solvent" is a claim rather than a measurement.
+    #
+    # The invariant: what the wallet holds -- spendable plus still maturing,
+    # because a pending block's coinbase is the backing for the credit it
+    # will become -- must cover what is already owed plus the fee the
+    # operator has not taken out yet.
+    #
+    # Reading the wallet requires the node, so this is skipped rather than
+    # guessed when --node is absent. A check that cannot run says so.
+    head("the pool can cover what it owes")
+    if not args.node:
+        warn("no --node, so the pool's wallet was not read -- solvency NOT examined")
+    else:
+        bal = pool_wallet(args.node, args.network)
+        if bal is None:
+            bad("the pool's wallet could not be read, so solvency is unknown. "
+                "An unreadable wallet is not a solvent one")
+        else:
+            trusted, immature = bal
+            held = trusted + immature
+            fees = pool.get("poolFeesCollected", 0)
+            need = owed + fees
+            print(f"        wallet holds {trusted/COIN:.8f} spendable + "
+                  f"{immature/COIN:.8f} maturing = {held/COIN:.8f} WAM")
+            print(f"        against owed {owed/COIN:.8f} + operator fee "
+                  f"{fees/COIN:.8f} = {need/COIN:.8f} WAM")
+            if held < need:
+                bad(f"the pool holds {held/COIN:.2f} WAM against {need/COIN:.2f} WAM "
+                    f"of obligations -- short by {(need-held)/COIN:.8f} WAM. Miners "
+                    f"are owed money the wallet does not contain")
+            else:
+                ok(f"covered, with {(held-need)/COIN:.2f} WAM of room")
 
     miners = pool.get("miners", 0)
     if miners == 0:

@@ -160,6 +160,26 @@ function renderStats(s) {
     }
   }
 
+  // Where the operator's fee goes. A percentage anybody can read is still a
+  // claim; an address is a thing they can follow. It is swept out of the pool
+  // wallet to an address that receives nothing else, so what stays behind is
+  // miners' money and can be checked against what the pool says it owes.
+  const feeNote = $('poolFeeAddress');
+  if (feeNote) {
+    const addr = s.config && s.config.poolFeeAddress;
+    if (poolFeePct === 0) {
+      text(feeNote, 'The pool takes no fee, so there is nothing to send anywhere.');
+    } else if (addr) {
+      text(feeNote,
+        `The ${poolFeePct}% operator fee is swept to ${addr}, which receives nothing ` +
+        'else. Everything left in the pool wallet is miners’ money.');
+    } else {
+      text(feeNote,
+        `The ${poolFeePct}% operator fee stays in the pool wallet; no separate ` +
+        'address is configured for it.');
+    }
+  }
+
   // ---- ports -------------------------------------------------------------
   const portTable = $('portTable');
   portTable.replaceChildren();
