@@ -30,7 +30,7 @@ SLIP-0173 prefixes wam / twam / wamrt:
 
 Signed releases for Linux, Windows and macOS:
 
-  https://github.com/wam-coin-official/wam-coin/releases/tag/v0.1.9
+  https://wamcoin.org/downloads/v0.1.9/
 
 One value in the entry is deliberately unusual, and I would rather name it
 than have it found later. `required_confirmations` is 60, where most coins in

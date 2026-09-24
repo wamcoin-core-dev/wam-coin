@@ -26,8 +26,8 @@ it is valid. It hashes nothing and answers in about a second. Two bugs in
 this code were caught that way before a single hash was computed.
 
 Linux, Windows and macOS. From this release every build starts a regtest node
-and mines two blocks with `--solo` that the node must accept — on all three —
-or no release is published at all.
+and runs `--check` on all three: the miner builds a real block and the node
+must accept it, or no release is published at all.
 
 Instructions: wamcoin.org/mine
 

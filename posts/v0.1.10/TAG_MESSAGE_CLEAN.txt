@@ -51,4 +51,4 @@ and that list is signed:
 
 The fingerprint to check it against lives in one place and nowhere else:
 
-    https://github.com/wam-coin-official/wam-coin/blob/main/SECURITY.md
+    https://wamcoin.org/security/

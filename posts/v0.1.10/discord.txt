@@ -43,10 +43,11 @@ wrong.
 
 **Linux, Windows and macOS — and from this release, proved on each.**
 
-Every build now starts a regtest node, runs `--check` against it, and mines
-two blocks with `--solo` which the node must accept, with the reward arriving
-at the address given. If that fails on any of the three, no release is
-published for any of them.
+Every build now starts a regtest node and runs `--check` on it: the miner
+builds a real block from that node's template and the node must accept it.
+Hashing and submission are proved separately on hardware we own -- running a
+miner on somebody else's build service is against their terms, which this
+project learned the expensive way.
 
 Before v0.1.10 both options had been proved on one Linux laptop and shipped
 to the other two untested. That is not the same thing as working, and saying

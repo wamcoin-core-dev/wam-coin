@@ -90,6 +90,7 @@ SOURCES += [str(p.relative_to(ROOT)) for p in (ROOT / "posts").rglob("*.txt")
 OURS = re.compile(
     r"""(?xi)
     (?: https?://(?:[a-z0-9-]+\.)*wamcoin\.org [^\s"'<>)\]]*
+      | https?://(?:www\.)?gitlab\.com/WAMCoin [^\s"'<>)\]]*
       | https?://(?:www\.)?github\.com/wam-coin-official [^\s"'<>)\]]*
       | https?://t\.me/wam_coin[^\s"'<>)\]]*
       | https?://(?:www\.)?x\.com/WAMCoinCore[^\s"'<>)\]]*
@@ -115,10 +116,15 @@ def identity(u):
     impersonated and therefore has to be listed. Every path underneath one
     is the same channel:
 
-        github.com/wam-coin-official/wam-coin/releases/tag/v0.1.6
-        github.com/wam-coin-official/wam-coin/blob/main/SECURITY.md
-        github.com/wam-coin-official/wam-coin.git
-                                    -> github.com/wam-coin-official
+        gitlab.com/WAMCoin/wam-coin/-/tags/v0.1.9
+        gitlab.com/WAMCoin/wam-coin/-/blob/main/SECURITY.md
+        gitlab.com/WAMCoin/wam-coin.git
+                                    -> gitlab.com/WAMCoin
+
+    GitHub is still matched, because CHANNELS.txt still names it and the
+    signature over that file is only as good as the bytes it covers. It
+    stops being a channel of ours the day that file is updated and
+    re-signed with the offline key.
 
         wamcoin.org/og-card.png     -> wamcoin.org
 

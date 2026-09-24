@@ -10,7 +10,8 @@
  --------
 
    website        https://wamcoin.org
-   source         https://github.com/wam-coin-official/wam-coin
+   source         https://gitlab.com/WAMCoin/wam-coin
+   downloads      https://wamcoin.org/downloads/
    announcements  https://t.me/wam_coin_updates
    x / twitter    https://x.com/WAMCoinCore
    discord        https://discord.gg/Gxvmrjy9Qb
@@ -51,11 +52,25 @@
  for. So the page looks empty, and that is Reddit's filtering of a new
  account rather than any sign the account is not ours.
 
- The same three identities are also linked as verified connections on the
- founder's Discord profile -- github.com/wam-coin-official,
- reddit.com/user/WAMCoinCore and x.com/WAMCoinCore. Discord verified each
- of those by sign-in, not by being told, which makes it a second way to
- check this file that does not depend on this file.
+ Two of these identities are also linked as verified connections on the
+ founder's Discord profile -- reddit.com/user/WAMCoinCore and
+ x.com/WAMCoinCore. Discord verified each of those by sign-in, not by being
+ told, which makes it a second way to check this file that does not depend
+ on this file.
+
+ A third was listed there until 2026-09-24: github.com/wam-coin-official.
+ That account was suspended that day over a GitHub Actions policy violation
+ -- a step in our build ran the miner on their machines, which their terms
+ forbid. It was our mistake, the step is removed, and an appeal is in. The
+ repository moved to GitLab and the downloads moved to wamcoin.org, where
+ they are served from machines this project owns.
+
+ THE NAME THAT IS NO LONGER OURS
+
+ github.com/wam-coin-official is not ours any more, and nothing appearing
+ there should be trusted as this project's. If that name is ever active
+ again and this file does not list it, it is not us. That is the whole
+ reason this file is signed: the list is what counts, never the name.
 
  THE ONE ACCOUNT THAT PROVES ITSELF WITHOUT US
 

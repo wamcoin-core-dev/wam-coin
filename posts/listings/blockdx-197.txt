@@ -38,7 +38,7 @@ install.
 Signed releases exist for all three desktop platforms, Linux x86_64, Windows
 x86_64 and macOS arm64, with SHA256SUMS signed by the release key:
 
-  https://github.com/wam-coin-official/wam-coin/releases/tag/v0.1.9
+  https://wamcoin.org/downloads/v0.1.9/
 
 One value in the xbridge conf is worth a sentence, since it is not the
 default: `Confirmations=60`.

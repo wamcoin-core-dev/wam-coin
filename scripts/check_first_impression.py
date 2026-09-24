@@ -97,7 +97,7 @@ def get(url, timeout=25, as_json=False):
         # 403 and 429 from api.github.com are the rate limit, not a verdict on
         # the repository. 404 IS a finding -- it means the name is wrong or the
         # repository is not public -- so it is left to the caller.
-        if e.code in (403, 429) and "api.github.com" in url:
+        if e.code in (403, 429) and ("api.github.com" in url or "gitlab.com/api" in url):
             raise CouldNotAsk(f"GitHub rate limit ({e.code}) -- "
                               f"60 unauthenticated calls an hour") from e
         raise
@@ -105,9 +105,17 @@ def get(url, timeout=25, as_json=False):
 
 
 def check_repo(repo):
-    head(f"the repository, as GitHub shows it: {repo}")
+    """What a stranger sees on the repository page.
+
+    This asked api.github.com until 2026-09-24. The canonical repository is
+    GitLab now, whose API wants the namespace URL-encoded and returns the
+    same three fields under different names -- description, web_url and
+    topics.
+    """
+    head(f"the repository, as a stranger first sees it: {repo}")
+    api = "https://gitlab.com/api/v4/projects/" + repo.replace("/", "%2F")
     try:
-        d = get(f"https://api.github.com/repos/{repo}", as_json=True)
+        d = get(api, as_json=True)
     except CouldNotAsk as e:
         warn(f"the repository was not examined: {e}. That is not the same as "
              f"it looking bad.")
@@ -124,12 +132,12 @@ def check_repo(repo):
         hits = [t for t in SEARCHABLE if t in desc.lower()]
         if not hits:
             bad(f"the description contains no term anyone would search for. "
-                f"GitHub search matches this field, so the project is invisible "
-                f"to anyone looking for what it is: {desc[:90]!r}")
+                f"Repository search matches this field, so the project is "
+                f"invisible to anyone looking for what it is: {desc[:90]!r}")
         else:
             ok(f"description carries: {', '.join(sorted(set(hits))[:4])}")
 
-    home = (d.get("homepage") or "").strip()
+    home = (d.get("homepage") or d.get("web_url") or "").strip()
     if not home:
         bad("the homepage field is empty -- the repository does not link to the "
             "site, and that field is the first thing a reviewer follows")
@@ -138,8 +146,8 @@ def check_repo(repo):
 
     topics = d.get("topics") or []
     if not topics:
-        bad("no topics -- topics are how GitHub is browsed, and with none the "
-            "project appears in no list at all")
+        bad("no topics -- topics are how these sites are browsed, and with "
+            "none the project appears in no list at all")
     elif len(topics) < 3:
         warn(f"only {len(topics)} topic(s): {', '.join(topics)}")
     else:
@@ -223,7 +231,7 @@ def check_links(url, html):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--repo", default="wam-coin-official/wam-coin")
+    ap.add_argument("--repo", default="WAMCoin/wam-coin")
     ap.add_argument("--site", default="https://wamcoin.org")
     args = ap.parse_args()
 

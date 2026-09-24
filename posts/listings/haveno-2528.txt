@@ -28,7 +28,7 @@ looking will land:
   supply            22,000,000 cap, 188,850 mined so far
 
   explorer          https://explorer.wamcoin.org
-  releases          https://github.com/wam-coin-official/wam-coin/releases/tag/v0.1.9
+  releases          https://wamcoin.org/downloads/v0.1.9/
 
 Registered with SatoshiLabs on 26 August: SLIP-0044 coin type 5718349,
 SLIP-0173 prefixes wam / twam / wamrt.

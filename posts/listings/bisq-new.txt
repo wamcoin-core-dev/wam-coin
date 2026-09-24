@@ -39,7 +39,7 @@ There is now. Measured at 2026-09-20T11:04:47Z:
   mined so far      188,850 WAM of a 22,000,000 cap
 
   explorer          https://explorer.wamcoin.org
-  releases          https://github.com/wam-coin-official/wam-coin/releases/tag/v0.1.9
+  releases          https://wamcoin.org/downloads/v0.1.9/
 
 Signed for Linux x86_64, Windows x86_64 and macOS arm64; SHA256SUMS is signed
 by the release key whose fingerprint is in the repository.

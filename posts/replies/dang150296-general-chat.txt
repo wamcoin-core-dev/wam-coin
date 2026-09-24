@@ -80,7 +80,7 @@ transaction id go on the public record the same way the 500 WAM did. Two
 accepted findings are listed with their amounts and the reason for each
 amount -- including the one where we argued ourselves down to a lower tier and
 wrote out why:
-https://github.com/wam-coin-official/wam-coin/blob/main/SECURITY.md
+https://gitlab.com/WAMCoin/wam-coin/-/blob/main/SECURITY.md
 
 --------------------------------------------------------------- 5 of 5
 
@@ -133,7 +133,7 @@ document does not exist, and I would rather say so than describe one.
 What exists today, each of which you can check rather than take from me:
 
   * Bounties, published before launch with their tiers, at
-    https://github.com/wam-coin-official/wam-coin/blob/main/SECURITY.md -- two
+    https://gitlab.com/WAMCoin/wam-coin/-/blob/main/SECURITY.md -- two
     findings accepted and listed there with the amount and the reasoning
     for the amount -- including the one where we argued ourselves DOWN to a
     lower tier and wrote out why, because a tier decision without a reason is
@@ -170,7 +170,7 @@ every 200,000 blocks, a premine vested to 2031 and not liquid at launch, and a
 treasury fee that expires by consensus at height 400,000. The contributing
 guide already puts changes to those out of scope, and it said so before there
 was anyone to say it to:
-https://github.com/wam-coin-official/wam-coin/blob/main/CONTRIBUTING.md
+https://gitlab.com/WAMCoin/wam-coin/-/blob/main/CONTRIBUTING.md
 
 A patch that alters them is a proposal for a different coin, and it should be
 honest enough to call itself one.

@@ -49,7 +49,16 @@ import urllib.request
 RED = "\033[31m"; GRN = "\033[32m"; YEL = "\033[33m"; BLD = "\033[1m"; OFF = "\033[0m"
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
-API = "https://api.github.com/repos/wam-coin-official/wam-coin/releases?per_page=20"
+# Where the downloads actually are.
+#
+# This asked api.github.com until 2026-09-24, when the account was suspended
+# and the check reported "the documented version still exists FAIL -- HTTP
+# 404" about documentation that was correct. It was asking the wrong question:
+# what matters is not whether a release exists on somebody's platform but
+# whether the URL the instructions give a reader answers when he fetches it.
+#
+# So it asks our own download directory, which is what the documents name.
+DOWNLOADS = "https://wamcoin.org/downloads/"
 
 sys.path.insert(0, str(REPO / "scripts" / "lib"))
 import docversion  # noqa: E402  -- needs the path above
@@ -84,17 +93,31 @@ def warn(m): print(f"  {YEL}!!{OFF}    {m}")
 
 
 def releases():
-    req = urllib.request.Request(API, headers={"User-Agent": "wam-check-docs"})
+    """What versions can actually be downloaded, read from the index page.
+
+    The directory is served with autoindex, so its HTML lists one link per
+    version. Parsing that is cruder than an API and it has one large
+    advantage: it sees exactly what a reader's browser would see.
+    """
+    req = urllib.request.Request(DOWNLOADS, headers={"User-Agent": "wam-check-docs"})
     with urllib.request.urlopen(req, timeout=25) as r:
-        data = json.load(r)
+        html = r.read().decode("utf-8", "replace")
+
     out = {}
-    for rel in data:
-        tag = rel["tag_name"].lstrip("v")
-        out[tag] = {
-            "title": rel["name"],
-            "has_binaries": any(a["name"].endswith(".tar.gz") for a in rel["assets"]),
-        }
-    newest = data[0]["tag_name"].lstrip("v") if data else None
+    for tag in sorted(set(re.findall(r'href="v([0-9.]+)/"', html))):
+        # A version directory is only real if it holds a signed list. A folder
+        # with archives and no SHA256SUMS.asc is a download nobody can check,
+        # which this project says it will not publish.
+        try:
+            req2 = urllib.request.Request(DOWNLOADS + "v" + tag + "/SHA256SUMS.asc",
+                                          headers={"User-Agent": "wam-check-docs"})
+            with urllib.request.urlopen(req2, timeout=25) as r2:
+                signed = bool(r2.read(1))
+        except Exception:
+            signed = False
+        out[tag] = {"title": "v" + tag, "has_binaries": signed}
+
+    newest = max(out, key=lambda t: [int(x) for x in t.split(".")]) if out else None
     return out, newest
 
 
