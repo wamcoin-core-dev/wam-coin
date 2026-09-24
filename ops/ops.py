@@ -121,7 +121,7 @@ _state = {"generated": 0, "hosts": {}, "checks": {}, "errors": []}
 _lock = threading.Lock()
 
 
-def rsh(host, cmd, timeout=45):
+def rsh(host, cmd, timeout=45, tries=2):
     """One read-only command on a host. Returns (rc, stdout).
 
     The script goes in on STDIN, never as an argument.
@@ -153,6 +153,36 @@ def rsh(host, cmd, timeout=45):
     platform. Stripping the carriage returns afterwards would have been the
     patch; not letting the platform rewrite them is the fix.
     """
+    # ONE MISSED TIMEOUT IS NOT A DEAD MACHINE.
+    #
+    # On 2026-09-24 the panel showed France "unreachable -- timed out after 60
+    # seconds" while ssh from the same laptop answered in six, and the backup
+    # check went red with it because it reaches all three hosts. The cause was
+    # 70 MB being scp'd to that host at the same moment: its uplink and sshd
+    # were busy, one connection went past the limit, and the panel called the
+    # machine dead.
+    #
+    # A false "unreachable" is expensive in a way a slow one is not. It is the
+    # loudest thing on the page, it drags other checks red with it, and after
+    # it has been wrong twice the operator stops believing the colour. So a
+    # timeout or a transport error is retried once, briefly, before any verdict
+    # is reached. A host that is genuinely down fails both times and costs a
+    # few seconds; a host that was merely busy is reported as what it is.
+    #
+    # Retried only for timeouts and transport failures -- never for a command
+    # that ran and returned non-zero, which is an answer and must be reported.
+    last = (255, "not attempted")
+    for attempt in range(max(1, tries)):
+        rc, out = _rsh_once(host, cmd, timeout)
+        if rc != 255:
+            return rc, out
+        last = (rc, out)
+        if attempt + 1 < max(1, tries):
+            time.sleep(2)
+    return last
+
+
+def _rsh_once(host, cmd, timeout):
     try:
         p = subprocess.run(
             ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",

@@ -224,6 +224,40 @@ def main():
     listed = find(canon_text)
     print(f"  {GRN}ok{OFF}    {len(listed)} channels listed")
 
+    # A name the list explicitly DISOWNS is accounted for, not missing.
+    #
+    # When github.com/wam-coin-official was suspended on 2026-09-24, every
+    # archive of a post that had ever linked it -- the launch announcement,
+    # the pre-announcements, the v0.1.8 texts -- was suddenly reported as "a
+    # channel of ours not in the list". Those archives are the record of what
+    # was published on the day and must not be edited; doing so would make
+    # this repository disagree with what is on BitcoinTalk.
+    #
+    # And the file does not ignore that name. It carries a section saying the
+    # name is not ours any more and that nothing appearing there should be
+    # trusted, which is the opposite of the silent omission this check exists
+    # to catch. So a host the file names in that section counts as handled.
+    #
+    # It is matched on the host, not the URL: the section cannot list every
+    # path that was ever linked, and the danger being checked for belongs to
+    # the account, not to one page under it.
+    DISOWN_MARK = "IS NO LONGER OURS"
+    disowned = set()
+    if DISOWN_MARK in canon_text:
+        tail = canon_text.split(DISOWN_MARK, 1)[1]
+        # Prose names a host without a scheme -- "github.com/wam-coin-official
+        # is not ours any more" -- and the URL matcher requires one, so the
+        # first version of this found nothing it was looking for and reported
+        # wamcoin.org, which is mentioned in the same paragraph. The scheme is
+        # supplied here so the same matcher can be used on prose.
+        tail = re.sub(r"(?<![/@.\w])((?:www\.)?(?:github|gitlab)\.com/[A-Za-z0-9._-]+)",
+                      r"https://", tail)
+        for u in find(tail):
+            disowned.add(u)
+        if disowned:
+            print(f"  {GRN}ok{OFF}    {len(disowned)} name(s) the list disowns "
+                  f"by name: {', '.join(sorted(disowned))}")
+
     # ---- 2. nothing of ours is missing from it ----------------------
     missing = {}
     scanned = 0
@@ -233,7 +267,7 @@ def main():
             continue
         scanned += 1
         for u, raw in find(p.read_text(encoding="utf-8", errors="replace")).items():
-            if u not in listed:
+            if u not in listed and u not in disowned:
                 missing.setdefault(raw, []).append(rel)
 
     if missing:
