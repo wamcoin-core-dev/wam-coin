@@ -1,0 +1,54 @@
+v0.1.10 -- mine alone, with no pool at all
+
+You can now mine WAM on your own machine against your own node, with no pool
+at all. `wam-miner --solo -u YOUR_ADDRESS` needs nothing but a running wamd
+with server=1. When you find a block you keep the whole 47.5 WAM instead of a
+share of it, and you wait longer between them.
+
+Before you spend any electricity, `wam-miner --check -u YOUR_ADDRESS` builds a
+real block from your node's template and asks the node whether it is valid. It
+hashes nothing and answers in about a second. If your node accepts it, every
+part of a block except the proof of work is correct.
+
+Both work on Linux, Windows and macOS, and from this release every build
+proves it: a regtest node is started, --check is run against it, and --solo
+mines two blocks that the node must accept with the reward arriving at the
+address given. If that fails on any platform, no release is published for any
+of them.
+
+Also fixed, all found by reading rather than by anyone reporting them:
+
+The Windows and macOS builds carried Bitcoin's logo. Four icon files ship
+with the GUI and the rename replaced one of them, so since v0.1.8 the window,
+the taskbar, the dock and the .exe itself showed the wrong mark on a wallet
+holding real coins. All four are now generated from one master.
+
+The miner reached for the mainnet RPC port whatever --network said, so mining
+alone on testnet or regtest failed with "could not connect" — which reads as
+"your node is not running" to somebody whose node is running perfectly, on
+another port. The port now follows the chain.
+
+The announcement bot cut these notes at twelve lines regardless of where a
+sentence ended. Every release before this one was announced mid-sentence, and
+twice mid-word. It also called every mainnet release "testnet software",
+because GitHub's pre-release flag means pre-1.0 and the bot read it as a
+statement about the chain.
+
+The mining pool credited block rewards one block before the coin could be
+spent — COINBASE_MATURITY is 100 and a coinbase becomes spendable at 101 — so
+it believed it held 47.5 WAM more than the node would let it send. Nothing
+was lost and nobody was paid twice; the books reconcile to 0.1 WAM of
+accumulated transaction fees. What it cost was time: payouts drifted from
+every ten minutes to every twenty or forty. scripts/treasury_spend.py chose
+inputs on the same wrong boundary, where the failure would have arrived at
+broadcast instead.
+
+Verify the download before running it. Every archive is listed in SHA256SUMS
+and that list is signed:
+
+    gpg --import SIGNING-KEY.asc
+    bash verify_release.sh .
+
+The fingerprint to check it against lives in one place and nowhere else:
+
+    https://github.com/wam-coin-official/wam-coin/blob/main/SECURITY.md
