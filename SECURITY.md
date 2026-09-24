@@ -175,7 +175,8 @@ The public key is [SIGNING-KEY.asc](SIGNING-KEY.asc) in this repository.
 **Anyone quoting a WAM fingerprint from anywhere other than this file is
 quoting an invention.** Not from an email, not from a chat message, not from a
 forum post, and not from a copy of this repository hosted somewhere else.
-Check it here, on GitHub, over HTTPS.
+Check it at https://wamcoin.org/security/, over HTTPS, on a domain this
+project controls -- not on a service that can take it away.
 
 ### What it signs, and what that is worth
 

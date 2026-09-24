@@ -209,6 +209,6 @@ echo
 echo "  What that does and does not tell you:"
 echo "    it does    -- these bytes are the bytes the holder of that key signed"
 echo "    it does not -- say the key belongs to anyone you should trust."
-echo "                   Check the fingerprint in SECURITY.md, on GitHub, over"
+echo "                   Check the fingerprint at wamcoin.org/security/, over"
 echo "                   HTTPS. Do not take it from an email or a forum post."
 echo
