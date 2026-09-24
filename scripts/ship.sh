@@ -75,6 +75,31 @@ if ! WAM_SHIP=1 git push origin "$BRANCH"; then
     exit 2
 fi
 
+# Then every mirror, and a mirror that fails does not stop the ship.
+#
+# On 2026-09-24 this project's GitHub account was suspended and the
+# repository, every release download and wamcoin.org went dark together,
+# because one company held the only copy anybody outside could reach. Git is
+# distributed and we were using it as though it were not.
+#
+# A mirror is any remote other than origin. Its failure is reported and
+# nothing more: the deploy is what the servers run, and a second copy being
+# unreachable must never be a reason not to deploy. That would be the same
+# mistake pointing the other way.
+mirrors="$(git remote | grep -v '^origin$' || true)"
+if [ -n "$mirrors" ]; then
+    printf '\n%smirroring%s\n' "$BLD" "$OFF"
+    for m in $mirrors; do
+        if WAM_SHIP=1 git push -q "$m" "$BRANCH" 2>/dev/null \
+           && WAM_SHIP=1 git push -q "$m" --tags 2>/dev/null; then
+            printf '  %sok%s    %s\n' "$GRN" "$OFF" "$m"
+        else
+            printf '  %s!!%s    %s did not take it -- the deploy continues\n' \
+                "$YLW" "$OFF" "$m"
+        fi
+    done
+fi
+
 printf '\n%sdeploying%s\n' "$BLD" "$OFF"
 bash scripts/deploy.sh
 rc=$?

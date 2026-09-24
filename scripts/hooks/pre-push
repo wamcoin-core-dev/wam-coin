@@ -15,9 +15,16 @@
 #  servers run from a checkout; a checkout that has not been pulled is code
 #  nobody is running. Three repairs of the same fault is not a fix.
 #
-#  Only `main` is guarded, because only main is what the servers follow.
-#  Branches, tags and forced pushes elsewhere are nobody's business but the
-#  author's.
+#  Only `main` ON THE DEPLOY REMOTE is guarded, because only that is what the
+#  servers follow. Branches, tags, forced pushes and every mirror are nobody's
+#  business but the author's.
+#
+#  The remote matters as much as the branch, and it did not until 2026-09-24.
+#  That day the project lost its GitHub account and started pushing the same
+#  history to GitLab and Gitea as mirrors -- and this hook refused every one
+#  of them, because it looked only at the branch name. A guard that fires on
+#  a push it was never meant to guard teaches the author to pass WAM_SHIP=1
+#  by habit, and then it guards nothing on the day it matters.
 #
 #  Deliberately escapable, by design: `WAM_SHIP=1 git push ...` or
 #  `git push --no-verify`. A hook that cannot be got around is one that gets
@@ -30,6 +37,25 @@ RED=$'\033[31m'; YLW=$'\033[33m'; BLD=$'\033[1m'; OFF=$'\033[0m'
 
 # Set by scripts/ship.sh, and by nothing else.
 [ "${WAM_SHIP:-0}" = "1" ] && exit 0
+
+# Which remote is being pushed to. git passes the name as $1 and the URL as
+# $2. Only the deploy remote is guarded; a mirror can be pushed to freely,
+# because nothing is deployed from it.
+#
+# The name is not trusted on its own -- a remote can be called anything -- so
+# the URL is checked too, against the host the servers actually pull from.
+remote_name="${1:-}"
+remote_url="${2:-}"
+deploy_remote="$(git config --get wam.deployRemote 2>/dev/null || echo origin)"
+
+case "$remote_url" in
+    *github.com*wam-coin-official*) ;;   # the deploy remote, guarded below
+    *)
+        # Not the URL the hosts pull from. If the name matches the configured
+        # deploy remote anyway, keep guarding; otherwise this is a mirror.
+        [ "$remote_name" = "$deploy_remote" ] || exit 0
+        ;;
+esac
 
 # stdin gives: <local ref> <local sha> <remote ref> <remote sha>, one per line.
 touches_main=0
