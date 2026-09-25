@@ -174,10 +174,44 @@ def main():
         else:
             drift = {k: (v, live[0].get(k)) for k, v in entry.items()
                      if k in live[0] and live[0].get(k) != v}
+
+            # One field is asked for and not ours to change, and the rest are
+            # dangerous. They must not be reported the same way.
+            #
+            # `links` holds the repository URL, and the live one still points
+            # at the account that was locked on 2026-09-24. It was reported to
+            # the maintainer on 2026-09-25 -- GLEECBTC/coins#2034, kept in
+            # posts/replies/cipig-2034.txt -- and only he can edit that file.
+            # A red that nobody here can clear is a red that teaches the
+            # reader to skip the line, which this project has already paid for
+            # once.
+            #
+            # So it warns while it is waiting, AND STOPS WAITING. After
+            # WAITING_ON_UNTIL it is a failure again, because "reported" is
+            # not a state a wrong link gets to sit in forever. Every other
+            # field fails immediately: a wrong prefix, port or confirmation
+            # count does not inconvenience a reader, it sends somebody's coins
+            # nowhere.
+            WAITING_ON = {"links"}
+            WAITING_ON_UNTIL = "2026-10-05"
+            import datetime as _dt
+            overdue = _dt.date.today().isoformat() > WAITING_ON_UNTIL
+
             if drift:
                 for k, (ours, theirs) in sorted(drift.items()):
-                    bad(f"live entry disagrees with ours: {k} is {theirs!r} "
-                        f"at GLEECBTC/coins and {ours!r} here")
+                    msg = (f"live entry disagrees with ours: {k} is {theirs!r} "
+                           f"at GLEECBTC/coins and {ours!r} here")
+                    if k in WAITING_ON and not overdue:
+                        warn(f"{msg} -- asked for on 2026-09-25 in "
+                             f"GLEECBTC/coins#2034; only that repository's "
+                             f"maintainer can change it. This becomes a "
+                             f"failure on {WAITING_ON_UNTIL}.")
+                    elif k in WAITING_ON:
+                        bad(f"{msg} -- asked for on 2026-09-25 and still not "
+                            f"changed. Ask again, or send the one-line pull "
+                            f"request instead of waiting.")
+                    else:
+                        bad(msg)
             else:
                 ok(f"{'live entry':<18} matches ours, field for field")
     except Exception as e:
