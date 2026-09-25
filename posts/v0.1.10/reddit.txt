@@ -1,0 +1,55 @@
+POST THIS AS A SELF POST FROM u/WAMCoinCore
+===========================================
+
+Title and body. No figures that move -- a Reddit post is found months later
+by search, and a stale hash rate in a thread nobody can edit reads as a
+collapse rather than as a Tuesday.
+
+--------------------------------------------------------------- TITLE
+
+WAM v0.1.10 -- mine against your own node, with no pool at all
+
+--------------------------------------------------------------- BODY
+
+You can now mine WAM on your own machine against your own node. No pool, no
+account, no operator, nothing between you and the chain.
+
+    wam-miner --solo -u YOUR_ADDRESS -t 4
+
+It needs a running `wamd` with `server=1` in `wam.conf` and nothing else.
+Work comes from `getblocktemplate` instead of a stratum job, and when you
+find a block you keep the whole 47.50 WAM rather than a share of it. You wait
+longer between them: that is the trade, and it is yours to make rather than
+ours to make for you.
+
+**Ask whether it would work before you spend any electricity:**
+
+    wam-miner --check -u YOUR_ADDRESS
+
+That builds a real block from your node's current template and asks your node
+whether it is valid. It hashes nothing, sends nothing, and answers in about a
+second. If the node accepts it, everything except the proof of work is
+correct: the coinbase, the height encoding, the treasury output, the witness
+commitment, the merkle root and the transactions. Two bugs in this code were
+caught that way before a single hash was computed.
+
+**Linux, Windows and macOS -- and from this release, proved on each.** Every
+build starts a regtest node and runs `--check` on it: the miner must build a
+block that node accepts, or the release does not exist. Before v0.1.10 both
+options had been proved on one Linux laptop and shipped to the other two
+platforms untested, which is not the same thing as working.
+
+**It is not a mandatory upgrade.** No consensus rule changed and a v0.1.9
+node validates exactly the same blocks. Upgrade if you want to mine alone.
+
+RandomX proof of work, 120 second blocks, 22,000,000 cap, no ICO and no
+pre-sale. The chain has been live since 15 September 2026.
+
+Downloads and the signature to check them against:
+https://wamcoin.org/downloads/
+
+Mining instructions for all three platforms:
+https://wamcoin.org/mine
+
+Read the chain yourself rather than believing this post:
+https://explorer.wamcoin.org

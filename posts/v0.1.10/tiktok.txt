@@ -1,0 +1,47 @@
+TIKTOK -- CAPTION AND WHAT IS ON SCREEN
+=======================================
+
+TikTok is not read, it is watched. The command has to be legible on screen
+in the first three seconds; the caption is only what somebody quotes when
+they share it. No command they cannot read is worth speaking aloud.
+
+--------------------------------------------------------------- CAPTION
+
+Mine WAM on your own computer. No pool, no account, no middleman.
+One command, and every block you find is yours.
+
+Linux, Windows and macOS. Free and open source.
+
+wamcoin.org/mine
+
+--------------------------------------------------------------- ON SCREEN
+
+  1.  (0-3s, large, centred)
+
+          wam-miner --solo -u YOUR_ADDRESS
+
+  2.  (3-8s)
+
+          no pool
+          no account
+          no operator
+
+  3.  (8-14s)
+
+          find a block
+          keep all 47.5 WAM
+
+  4.  (14-20s)
+
+          Linux · Windows · macOS
+          wamcoin.org/mine
+
+--------------------------------------------------------------- NOTES
+
+No price, no market, no "investment" -- not in the caption, not on screen,
+not spoken. This platform's audience is the one most likely to hear a
+mining video as a money video, and the paper says this project does not
+make value. See the rule: we do not say it twice, but we never say the
+opposite once.
+
+No hash rate and no height. The video stays up; the numbers do not.

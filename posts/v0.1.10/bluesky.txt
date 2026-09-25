@@ -1,0 +1,19 @@
+ONE POST, FROM @wamcoin.org
+===========================
+
+Bluesky allows 300 characters. This is 255, counted rather than estimated.
+No hash rate and no height, for the reason in x.txt: the post outlives its
+own facts and cannot be edited into truth later.
+
+---------------------------------------------------------------
+
+WAM v0.1.10: mine against your own node, with no pool at all.
+
+wam-miner --solo -u YOUR_ADDRESS
+
+Find a block, keep all 47.5 WAM.
+
+Linux, Windows and macOS - every build proves the miner builds a valid block
+on all three before it ships.
+
+wamcoin.org/mine
