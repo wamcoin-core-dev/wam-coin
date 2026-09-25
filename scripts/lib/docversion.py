@@ -61,7 +61,19 @@ import subprocess
 VERSION = r"\d+\.\d+\.\d+"
 
 CONTEXTS = [
-    (r"releases/download/v", r"/"),      # the URL people curl
+    # The URL people curl. Two shapes, because the downloads moved.
+    #
+    # They were on a release page until 2026-09-24 and are on wamcoin.org
+    # now. Only the first shape was listed here, so raising the version
+    # rewrote the FILENAME in every command and left the DIRECTORY behind:
+    #
+    #   https://wamcoin.org/downloads/v0.1.9/wam-coin-v0.1.10-...tar.gz
+    #
+    # Every download instruction in every document, pointing at a directory
+    # for one release and a file from another. Neither half is wrong on its
+    # own, which is why it would have survived a quick read.
+    (r"releases/download/v", r"/"),
+    (r"/downloads/v", r"/"),
     (r"wam-(?:coin|miner)-v", r""),      # the tarball, and the directory they cd into
     (r"\[v", r"\]\("),                   # "the release is [v0.1.5](...)"
 ]
@@ -74,9 +86,10 @@ FIND = re.compile("|".join(f"{p}({VERSION}){s}" for p, s in CONTEXTS))
 
 # WHICH OF THOSE CONTEXTS CAN ONLY EVER BE OUR OWN SOFTWARE.
 #
-# The first two can be nothing else: releases/download/v... is a URL into this
-# repository, and wam-coin-v... / wam-miner-v... are the names of files only
-# this project publishes. The third, "[v0.1.5](", is a markdown link whose
+# The first three can be nothing else: releases/download/v... and
+# /downloads/v... are URLs into this project's own downloads, and
+# wam-coin-v... / wam-miner-v... are the names of files only this project
+# publishes. The third, "[v0.1.5](", is a markdown link whose
 # label happens to be a version -- and docs/ links to Bitcoin Core v28.1 and
 # RandomX v1.2.1 exactly that way.
 #
@@ -92,7 +105,7 @@ FIND = re.compile("|".join(f"{p}({VERSION}){s}" for p, s in CONTEXTS))
 # Split here rather than in the caller, because set_version.py rewrites all
 # three contexts and must go on doing so: a link labelled with our version
 # still has to move when the version moves.
-OURS_CONTEXTS = CONTEXTS[:2]
+OURS_CONTEXTS = CONTEXTS[:3]
 FIND_OURS = re.compile("|".join(f"{p}({VERSION}){s}" for p, s in OURS_CONTEXTS))
 
 # Markdown is what a person edits; the site pages are what a reader actually
