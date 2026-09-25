@@ -49,6 +49,11 @@ RED = "\033[31m"; GRN = "\033[32m"; YEL = "\033[33m"; BLD = "\033[1m"; OFF = "\0
 REPO = pathlib.Path(__file__).resolve().parent.parent
 KOMODO = REPO / "integration" / "komodo"
 
+# Where a reader of these entries actually goes to fetch a wallet. Not a
+# mirror of the source -- the downloads themselves, on this project's own
+# hardware, which is the only copy whose disappearance is ours to prevent.
+DOWNLOADS_URL = "https://wamcoin.org/downloads/"
+
 _fails = []
 
 
@@ -249,43 +254,93 @@ def check_blockdx(prefix, num, hdr):
     #       and never asked what the repository had released.
     #
     # A check that can only look one way says nothing about the other.
+    #
+    # WHERE THIS LOOKS, AND WHY IT IS NO LONGER GITHUB
+    #
+    # Until 2026-09-25 both halves asked api.github.com. That was the right
+    # question while GitHub held the only copy of the downloads, and it became
+    # the wrong one the day the account behind it was suspended: v0.1.8 and
+    # v0.1.9 are still published, still signed and still downloadable, and
+    # asking GitHub about them now answers 404 -- so this check reported a
+    # missing download that is not missing, and would have reported the whole
+    # list downloadable again on the day somebody re-uploaded old binaries to
+    # a mirror nobody reads.
+    #
+    # The manifest sends an integrator to the downloads, and the downloads are
+    # at wamcoin.org, on hardware this project runs. That is what has to be
+    # true, so that is what is measured. GitHub, GitLab and Gitea are three
+    # mirrors of the source; none of them is where a wallet is fetched from,
+    # and a check must ask the place the reader will actually go.
     try:
         import urllib.request
+        import urllib.error
+
+        def _get(url):
+            req = urllib.request.Request(
+                url, headers={"User-Agent": "wam-listing-check"})
+            with urllib.request.urlopen(req, timeout=25) as f:
+                return f.read().decode("utf-8", "replace")
+
+        def _vkey(v):
+            return tuple(int(x) for x in re.findall(r"\d+", v))
+
+        listed = m.get("versions", [])
+
+        # ---- released but not listed --------------------------------------
         newest = None
         try:
-            req = urllib.request.Request(
-                "https://api.github.com/repos/wamcoin-core-dev/wam-coin/releases?per_page=10",
-                headers={"User-Agent": "wam-listing-check"})
-            with urllib.request.urlopen(req, timeout=25) as f:
-                rels = json.load(f)
-            live = [r["tag_name"] for r in rels
-                    if not r.get("draft") and r.get("assets")]
-            newest = live[0] if live else None
+            index = _get(DOWNLOADS_URL)
+            published = sorted(set(re.findall(r'href="(v\d+\.\d+\.\d+)/"', index)),
+                               key=_vkey)
+            newest = published[-1] if published else None
         except Exception as e:
-            unmeasured(f"could not read the release list, so whether the newest "
-                       f"release is listed is unknown ({e})")
-        if newest and newest not in m.get("versions", []):
-            bad(f"{newest} is published with downloadable assets and is NOT in "
+            unmeasured(f"could not read the downloads index, so whether the "
+                       f"newest release is listed is unknown ({e})")
+        if newest and newest not in listed:
+            bad(f"{newest} is published and downloadable and is NOT in "
                 f"versions. An integrator reading this file does not know the "
                 f"version people are running exists.")
         elif newest:
             ok(f"{'newest ' + newest:<18} is in versions")
 
-        for v in m.get("versions", []):
-            req = urllib.request.Request(
-                f"https://api.github.com/repos/wamcoin-core-dev/wam-coin/releases/tags/{v}",
-                headers={"User-Agent": "wam-listing-check"})
-            with urllib.request.urlopen(req, timeout=25) as f:
-                rel = json.load(f)
-            n = len(rel.get("assets", []))
-            if n == 0:
-                bad(f"versions lists {v}, which is a tag with no downloadable "
-                    f"assets. Anyone told to install that version finds nothing.")
+        # ---- listed but not downloadable ----------------------------------
+        #
+        # A version is downloadable when its directory carries wallet archives
+        # AND the signature over their checksums. Half of that is worse than
+        # neither: binaries nobody can verify, reached by following a manifest
+        # this project published.
+        for v in listed:
+            try:
+                page = _get(f"{DOWNLOADS_URL}{v}/")
+            except urllib.error.HTTPError as e:
+                if e.code == 404:
+                    bad(f"versions lists {v}, which has no download directory "
+                        f"at {DOWNLOADS_URL}{v}/. Anyone told to install that "
+                        f"version finds nothing.")
+                else:
+                    unmeasured(f"could not read the {v} downloads ({e})")
+                continue
+            except Exception as e:
+                unmeasured(f"could not read the {v} downloads ({e})")
+                continue
+
+            files = re.findall(r'href="([^"/]+)"', page)
+            archives = [f for f in files
+                        if re.match(rf"wam-(coin|miner)-{re.escape(v)}-.*"
+                                    rf"(\.tar\.gz|\.zip)$", f)]
+            if not archives:
+                bad(f"versions lists {v}, whose download directory holds no "
+                    f"wallet archive. Anyone told to install that version "
+                    f"finds nothing.")
+            elif "SHA256SUMS.asc" not in files:
+                bad(f"versions lists {v}, whose {len(archives)} archives have "
+                    f"no SHA256SUMS.asc beside them. Nobody can check what "
+                    f"they downloaded, and this manifest sent them there.")
             else:
-                ok(f"{('release ' + v):<18} {n} downloadable asset(s)")
+                ok(f"{('release ' + v):<18} {len(archives)} signed download(s)")
     except Exception as e:
-        unmeasured(f"could not reach GitHub, so whether every listed version "
-                   f"still has a download is unknown ({e})")
+        unmeasured(f"could not reach {DOWNLOADS_URL}, so whether every listed "
+                   f"version still has a download is unknown ({e})")
 
 
 if __name__ == "__main__":
