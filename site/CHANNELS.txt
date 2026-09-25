@@ -11,7 +11,8 @@
 
    website        https://wamcoin.org
    source         https://gitlab.com/WAMCoin/wam-coin
-   mirror         https://github.com/wamcoin-core-dev/wam-coin
+   source         https://github.com/wamcoin-core-dev/wam-coin
+   source         https://gitea.com/WAMCoin/wam-coin
    downloads      https://wamcoin.org/downloads/
    announcements  https://t.me/wam_coin_updates
    x / twitter    https://x.com/WAMCoinCore
@@ -66,11 +67,19 @@
  repository moved to GitLab and the downloads moved to wamcoin.org, where
  they are served from machines this project owns.
 
- The repository has a mirror at github.com/wamcoin-core-dev. It is a copy
- and nothing depends on it: the chain, the site and the downloads do not
- pass through it, and if it goes the way the last one did, nothing stops.
- It is listed because it is ours and because this file may not leave one
- of ours out.
+ THREE COPIES OF THE SOURCE, AND WHY
+
+ The repository is published at GitLab, GitHub and Gitea, at three
+ different companies. All three hold the same commits and the same tags
+ and are updated together. None of them is the one that matters: the
+ chain, the site and the downloads do not pass through any of them, and
+ if one disappears the other two are already there.
+
+ That is written here because of what happened on 24 September 2026,
+ when this project had one and lost it, and the repository, every
+ release download and the whole website went dark in the same minute.
+ A reader who finds one of the three gone should not need to be told
+ where to go. He should already be holding the other two.
 
  THE NAME THAT IS NO LONGER OURS
 
