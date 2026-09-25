@@ -314,6 +314,19 @@ function fromMarkdown(text) {
 // So the release notes carry the distinction and the bot repeats it loudly.
 const MANDATORY = /^[ \t>*_]*MANDATORY:[ \t]*(.+)$/im;
 
+// The project's own download page, and every place the source is published.
+//
+// Both are overridable from the environment so that moving a host is a
+// config change. The last move was not: it took thirty-two files.
+const DOWNLOADS_URL = process.env.WAM_DOWNLOADS_URL
+    || 'https://wamcoin.org/downloads/';
+const SOURCES = (process.env.WAM_SOURCES || [
+    'https://gitlab.com/WAMCoin/wam-coin',
+    'https://github.com/wamcoin-core-dev/wam-coin',
+    'https://gitea.com/WAMCoin/wam-coin',
+].join(',')).split(',').map((x) => x.trim()).filter(Boolean);
+
+
 /**
  * Is the published release actually signed, and does the signature cover what
  * is on the page?
@@ -461,6 +474,21 @@ function releaseMessage(release) {
             : []),
         ``,
         body,
+        ``,
+        // Where to get it, and it is not one place.
+        //
+        // This printed the release page and nothing else. On 2026-09-24 that
+        // page's account was suspended and every announcement this bot had
+        // ever posted became a link to a 404 -- in channels, permanently,
+        // where nobody can go back and edit them.
+        //
+        // So the download line is our own domain, served from machines this
+        // project owns, and the source is named in all three places it is
+        // published. A reader who finds one of them gone does not have to ask
+        // anybody where to go next.
+        ...(DOWNLOADS_URL ? [b('Download'), t(DOWNLOADS_URL), ``] : []),
+        b('Source, in three places'),
+        ...SOURCES.map((u) => t(u)),
         ``,
         t(release.url),
         ``,
