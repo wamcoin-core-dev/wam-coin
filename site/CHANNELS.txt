@@ -11,6 +11,7 @@
 
    website        https://wamcoin.org
    source         https://gitlab.com/WAMCoin/wam-coin
+   mirror         https://github.com/wamcoin-core-dev/wam-coin
    downloads      https://wamcoin.org/downloads/
    announcements  https://t.me/wam_coin_updates
    x / twitter    https://x.com/WAMCoinCore
@@ -64,6 +65,12 @@
  forbid. It was our mistake, the step is removed, and an appeal is in. The
  repository moved to GitLab and the downloads moved to wamcoin.org, where
  they are served from machines this project owns.
+
+ The repository has a mirror at github.com/wamcoin-core-dev. It is a copy
+ and nothing depends on it: the chain, the site and the downloads do not
+ pass through it, and if it goes the way the last one did, nothing stops.
+ It is listed because it is ours and because this file may not leave one
+ of ours out.
 
  THE NAME THAT IS NO LONGER OURS
 

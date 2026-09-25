@@ -251,7 +251,7 @@ def main():
         # wamcoin.org, which is mentioned in the same paragraph. The scheme is
         # supplied here so the same matcher can be used on prose.
         tail = re.sub(r"(?<![/@.\w])((?:www\.)?(?:github|gitlab)\.com/[A-Za-z0-9._-]+)",
-                      r"https://", tail)
+                      r"https://\1", tail)
         for u in find(tail):
             disowned.add(u)
         if disowned:
