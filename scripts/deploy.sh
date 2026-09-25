@@ -59,6 +59,47 @@ if ! git merge-base --is-ancestor HEAD origin/main 2>/dev/null; then
     fi
 fi
 
+# Refuse to deploy a CHANNELS.txt whose signature does not cover it.
+#
+# DEPLOYING IS PUBLISHING NOW, AND IT DID NOT USE TO BE. nginx serves
+# /opt/wam/site straight from this checkout -- see deploy/nginx/
+# wam-site-locations.conf -- so the moment a host is updated, whatever
+# CHANNELS.txt this commit holds is live at wamcoin.org/CHANNELS.txt. While
+# the site was published from a separate branch, "deploying is not
+# publishing" was true and was written down as a rule. It stopped being true
+# when the site moved onto our own hardware and nobody rewrote the rule.
+#
+# The file tells its reader to run `gpg --verify CHANNELS.txt.asc
+# CHANNELS.txt`. Publishing revision N beside revision N-1's signature hands
+# that reader BAD signature -- and BAD signature is the one outcome that
+# reads as an attack. He cannot tell our carelessness from somebody having
+# replaced the list that says which accounts are ours. That is worse than
+# having no signature at all, which is why this refuses rather than warns.
+#
+# WAM_DEPLOY_UNSIGNED=1 is the way past it, for the case where a host needs
+# an urgent fix and the USB key is not in the room. It is deliberately
+# awkward to type and it says what it is doing.
+if [ -x scripts/check_channels_signed.sh ] || [ -f scripts/check_channels_signed.sh ]; then
+    if ! bash scripts/check_channels_signed.sh >/dev/null 2>&1; then
+        if [ "${WAM_DEPLOY_UNSIGNED:-0}" = "1" ]; then
+            echo "  ${YEL}!!${OFF}    CHANNELS.txt is not signed for these bytes --"
+            echo "        deploying anyway because WAM_DEPLOY_UNSIGNED=1."
+            echo "        wamcoin.org/CHANNELS.txt will fail verification until"
+            echo "        scripts/sign_channels.sh is run."
+        else
+            echo "  ${RED}CHANNELS.txt is not signed for the bytes in this commit${OFF}"
+            echo "  nginx serves site/ from the checkout, so deploying publishes it,"
+            echo "  and a reader following our own instructions would get"
+            echo "  BAD signature -- which is indistinguishable from an attack."
+            echo
+            echo "      bash scripts/sign_channels.sh        # with the USB key"
+            echo "      WAM_DEPLOY_UNSIGNED=1 bash scripts/deploy.sh   # if urgent"
+            echo
+            exit 2
+        fi
+    fi
+fi
+
 bad=0
 for h in "${HOSTS[@]}"; do
     before="$(ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o BatchMode=yes -o ConnectTimeout=15 "root@$h" \
