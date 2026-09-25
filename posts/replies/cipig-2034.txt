@@ -1,0 +1,22 @@
+Thank you for fixing the conflicts yourself, running the swap, and merging
+it — and for catching the confirmations. You were right: 60 at a 120 second
+target is a two hour swap, which is not a safer swap, it is no swap. Our own
+copy of the entry now says 15 so the two agree, with the reason written down
+next to it, including what it costs. The deposit depth we publish stays at
+60, since that one can afford to wait and a swap cannot.
+
+One correction for whenever you next touch the entry: `links.github` points
+at a repository that is no longer reachable. The source moved, and it is now
+in three places, at three companies:
+
+    https://gitlab.com/WAMCoin/wam-coin
+    https://github.com/wamcoin-core-dev/wam-coin
+    https://gitea.com/WAMCoin/wam-coin
+
+Any of the three is fine for that field; the GitHub one keeps it consistent
+with the other entries. Downloads are at https://wamcoin.org/downloads/ and
+are signed — key and fingerprint at https://wamcoin.org/security/.
+
+v0.1.10 shipped this week. The part you may care about is that the miner now
+runs against your own node with no pool at all (`wam-miner --solo`), and that
+every build proves it on Linux, Windows and macOS before the release exists.
