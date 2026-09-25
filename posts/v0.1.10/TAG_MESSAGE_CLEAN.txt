@@ -11,10 +11,15 @@ hashes nothing and answers in about a second. If your node accepts it, every
 part of a block except the proof of work is correct.
 
 Both work on Linux, Windows and macOS, and from this release every build
-proves it: a regtest node is started, --check is run against it, and --solo
-mines two blocks that the node must accept with the reward arriving at the
-address given. If that fails on any platform, no release is published for any
-of them.
+proves the second one on each: a regtest node is started and --check is run
+against it, so the miner must build a block that node accepts before the
+release exists. That covers everything in a block except the proof of work.
+
+Hashing and submission are proved on hardware this project owns, and never in
+CI. Running a miner on a hosted build service is against the terms of every
+one of them, which this project learned the expensive way on 2026-09-24 when
+a step of ours did exactly that and cost it its code-hosting account for a
+day.
 
 Also fixed, all found by reading rather than by anyone reporting them:
 
