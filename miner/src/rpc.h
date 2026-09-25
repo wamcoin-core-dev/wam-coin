@@ -221,14 +221,40 @@ private:
 
     std::string Post(const std::string& body, int& status)
     {
+        // Windows will not do networking until Winsock has been started, and
+        // this is the first network call --solo and --check ever make.
+        //
+        // Without it getaddrinfo fails on Windows for every host, including a
+        // plain 127.0.0.1, and the miner reports
+        //
+        //     error  cannot resolve 127.0.0.1
+        //
+        // which reads as a wrong address to somebody whose address is right.
+        // stratum.h has always called this before connecting, so mining to a
+        // pool has worked on Windows since v0.1.8 while mining alone could
+        // never have worked there at all. It was never run on Windows until
+        // the platform gate ran it on 2026-09-25, and it failed on its first
+        // attempt.
+        //
+        // SockStartup is idempotent -- a function-local static -- so calling
+        // it on every request costs one comparison.
+        if (!SockStartup()) {
+            throw std::runtime_error(
+                "the operating system's networking could not be started");
+        }
+
         addrinfo hints{};
         hints.ai_family   = AF_UNSPEC;
         hints.ai_socktype = SOCK_STREAM;
 
         addrinfo* res = nullptr;
         const std::string portStr = std::to_string(m_port);
-        if (getaddrinfo(m_host.c_str(), portStr.c_str(), &hints, &res) != 0 || !res) {
-            throw std::runtime_error("cannot resolve " + m_host);
+        const int rc = getaddrinfo(m_host.c_str(), portStr.c_str(), &hints, &res);
+        if (rc != 0 || !res) {
+            // Say what the resolver said. "cannot resolve 127.0.0.1" with no
+            // reason sent this bug looking in the wrong place for an hour.
+            throw std::runtime_error("cannot resolve " + m_host + ": " +
+                                     gai_strerror(rc));
         }
 
         sock_t s = kInvalidSock;
