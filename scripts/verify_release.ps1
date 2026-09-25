@@ -168,7 +168,7 @@ if (-not (Test-Path -LiteralPath $sums)) {
              Select-Object -First 1
         if ($m) { $ver = $m.Matches[0].Groups[1].Value }
     }
-    $base = "https://github.com/wam-coin-official/wam-coin/releases"
+    $base = "https://github.com/wamcoin-core-dev/wam-coin/releases"
     Write-Say ""
     Write-Say "Fetch the release into this directory first:"
     Write-Say ""
@@ -323,7 +323,7 @@ try {
     } else {
         Write-Warn "SIGNING-KEY.asc is not here, so the key could not be imported"
         Write-Say "Download it beside the release:"
-        Write-Say "    curl -LO https://raw.githubusercontent.com/wam-coin-official/wam-coin/main/SIGNING-KEY.asc"
+        Write-Say "    curl.exe -LO https://wamcoin.org/SIGNING-KEY.asc"
         Write-Host ""
         exit 2
     }

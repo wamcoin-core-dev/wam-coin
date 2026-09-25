@@ -755,7 +755,7 @@ def build_changes() -> list[Change]:
                         "[https://github.com/bitcoin/bitcoin/issues],[bitcoin],[https://bitcoincore.org/])"),
                 replacement=("AC_INIT([WAM Coin],m4_join([.], _CLIENT_VERSION_MAJOR, _CLIENT_VERSION_MINOR, "
                              "_CLIENT_VERSION_BUILD)m4_if(_CLIENT_VERSION_RC, [0], [], [rc]_CLIENT_VERSION_RC),"
-                             "[https://github.com/wam-coin-official/wam-coin/issues],"
+                             "[https://github.com/wamcoin-core-dev/wam-coin/issues],"
                              "[wam],[https://wamcoin.org/])"),
             ),
         ]))
@@ -819,14 +819,14 @@ def build_changes() -> list[Change]:
             Edit(
                 file="src/clientversion.cpp",
                 description="point --version at this project's source, not Bitcoin's",
-                marker="github.com/wam-coin-official/wam-coin",
+                marker="github.com/wamcoin-core-dev/wam-coin",
                 anchor='    const std::string URL_SOURCE_CODE = "<https://github.com/bitcoin/bitcoin>";',
                 replacement=(
                     '    // Telling a user the source is at bitcoin/bitcoin is not modesty,\n'
                     '    // it is wrong: the binary they are holding is not built from there.\n'
                     '    // Bitcoin Core keeps its credit in the copyright line above, which\n'
                     '    // CopyrightHolders() adds automatically for any fork.\n'
-                    '    const std::string URL_SOURCE_CODE = "<https://github.com/wam-coin-official/wam-coin>";'),
+                    '    const std::string URL_SOURCE_CODE = "<https://github.com/wamcoin-core-dev/wam-coin>";'),
             ),
             Edit(
                 file="configure.ac",

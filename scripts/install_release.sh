@@ -59,7 +59,14 @@ ROOT="${ROOT:-/opt}"
 BIN="${BIN:-$ROOT/wam-current-bin}"
 OWNER="${OWNER:-root}"
 
-BASE="https://github.com/wam-coin-official/wam-coin/releases/download/v${V}"
+# Our own downloads, not a code-hosting account.
+#
+# This pointed at a release page until 2026-09-24, when that account
+# was suspended and every install this script had ever printed became
+# a 404. The archives are signed, so where they are served from has
+# never been what makes them trustworthy -- and serving them ourselves
+# means no third party can take the installer down.
+BASE="${WAM_DOWNLOADS:-https://wamcoin.org/downloads}/v${V}"
 WORK="$ROOT/wam-v${V}"
 
 # Resolved HERE, before the cd below, and not where it is used.

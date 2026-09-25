@@ -293,7 +293,7 @@ THE FINE PRINT, WHICH IS THE IMPORTANT PART
 
   There has been no third-party security audit.
 
-Source:   https://github.com/wam-coin-official/wam-coin
+Source:   https://wamcoin.org
 Website:  https://wamcoin.org
 EOF
 

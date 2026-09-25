@@ -254,7 +254,7 @@ def check_blockdx(prefix, num, hdr):
         newest = None
         try:
             req = urllib.request.Request(
-                "https://api.github.com/repos/wam-coin-official/wam-coin/releases?per_page=10",
+                "https://api.github.com/repos/wamcoin-core-dev/wam-coin/releases?per_page=10",
                 headers={"User-Agent": "wam-listing-check"})
             with urllib.request.urlopen(req, timeout=25) as f:
                 rels = json.load(f)
@@ -273,7 +273,7 @@ def check_blockdx(prefix, num, hdr):
 
         for v in m.get("versions", []):
             req = urllib.request.Request(
-                f"https://api.github.com/repos/wam-coin-official/wam-coin/releases/tags/{v}",
+                f"https://api.github.com/repos/wamcoin-core-dev/wam-coin/releases/tags/{v}",
                 headers={"User-Agent": "wam-listing-check"})
             with urllib.request.urlopen(req, timeout=25) as f:
                 rel = json.load(f)
