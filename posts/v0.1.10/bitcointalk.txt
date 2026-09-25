@@ -84,15 +84,15 @@ validates exactly the same blocks, stays on the same chain and is in no
 danger. Upgrade when it suits you; if you want to mine alone, that is the
 reason to.
 
-[b]The chain, measured at 2026-09-24T10:12:57Z rather than recalled[/b]
+[b]The chain, measured at 2026-09-25T18:21:23Z rather than recalled[/b]
 
 [code]
-height                6,491
-difficulty            0.008814
-network hash rate     235,579 H/s  (over the last 720 blocks, about a day)
-peers                 50
-mined to miners       308,322.50 WAM
-circulating           2,324,550 of a 22,000,000 cap  (10.57%)
+height                7,406
+difficulty            0.006687
+network hash rate     311,685 H/s  (over the last 720 blocks, about a day)
+peers                 46
+mined to miners       351,785.00 WAM
+circulating           2,370,300 of a 22,000,000 cap  (10.77%)
 [/code]
 
 Read those yourself at explorer.wamcoin.org rather than believing this post.

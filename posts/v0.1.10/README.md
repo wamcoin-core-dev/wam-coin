@@ -1,16 +1,20 @@
 # v0.1.10 — what is posted, and why it says what it says
 
-Written 2026-09-24. Every figure in these files was measured at one moment,
-`2026-09-24T10:12:57Z`, not recalled:
+Written 2026-09-24, re-measured 2026-09-25 before sending. Every figure in
+these files was measured at one moment, `2026-09-25T18:21:23Z`, not recalled:
 
 | | |
 |---|---|
-| height | 6,491 |
-| difficulty | 0.008814 |
-| network hash rate | 235,579 H/s over the last 720 blocks (~1 day) |
-| peers | 50 |
-| mined to miners | 308,322.50 WAM |
-| circulating | 2,324,550 of a 22,000,000 cap (10.57%) |
+| height | 7,406 |
+| difficulty | 0.006687 |
+| network hash rate | 311,685 H/s over the last 720 blocks (~1 day) |
+| peers | 46 |
+| mined to miners | 351,785.00 WAM |
+| circulating | 2,370,300 of a 22,000,000 cap (10.77%) |
+
+The first set was 32 hours old by the time these were sent — 915 blocks, and
+a hash rate that had moved by a third. Re-measured rather than sent, which is
+the rule directly below.
 
 **If these are sent more than a day or two later, re-measure first.** A stale
 number in a public thread costs more than it saves, and two different dates
@@ -83,9 +87,13 @@ connections from both. A miner sent to a dead endpoint comes back thinking
 the alternatives were imaginary, which is worse than not mentioning it.
 
 **Every bug is described with what it would have cost, not as a changelog
-line.** "Fixed icon handling" tells a reader nothing. "Every Windows and
-macOS build since v0.1.8 showed Bitcoin's logo on a wallet holding real
-coins" tells him why he should install this one.
+line.** "Fixed icon handling" tells a reader nothing. What the texts say is
+that the first graphical wallet built from this tree would have carried
+Bitcoin's logo, and that nothing published so far has — the releases are
+built `--without-gui`. Both halves are said, because the cost is what makes
+the fix worth reading about and the limit is what keeps it true. An earlier
+draft of this file claimed every Windows and macOS build since v0.1.8 had
+shown the wrong mark to users. It had not, and the founder caught it.
 
 **The hash rate carries its window.** It roughly doubles between the quietest
 hour of the night and the busiest of the morning, so the figure quoted is a
