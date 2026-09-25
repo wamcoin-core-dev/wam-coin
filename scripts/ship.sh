@@ -89,9 +89,24 @@ fi
 mirrors="$(git remote | grep -v '^origin$' || true)"
 if [ -n "$mirrors" ]; then
     printf '\n%smirroring%s\n' "$BLD" "$OFF"
+    # Retried once before it is called a failure. gitea rejected the first
+    # push of a large history twice on 2026-09-25 -- "missing necessary
+    # objects" -- and took it on the immediate retry both times. Reporting
+    # that as a failed mirror teaches the reader to ignore the line.
+    _mirror_push() {
+        local m="$1" attempt
+        for attempt in 1 2; do
+            if WAM_SHIP=1 git push -q "$m" "$BRANCH" 2>/dev/null \
+               && WAM_SHIP=1 git push -q "$m" --tags 2>/dev/null; then
+                return 0
+            fi
+            sleep 3
+        done
+        return 1
+    }
+
     for m in $mirrors; do
-        if WAM_SHIP=1 git push -q "$m" "$BRANCH" 2>/dev/null \
-           && WAM_SHIP=1 git push -q "$m" --tags 2>/dev/null; then
+        if _mirror_push "$m"; then
             printf '  %sok%s    %s\n' "$GRN" "$OFF" "$m"
         else
             printf '  %s!!%s    %s did not take it -- the deploy continues\n' \
