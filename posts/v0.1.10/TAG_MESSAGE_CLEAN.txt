@@ -23,10 +23,13 @@ day.
 
 Also fixed, all found by reading rather than by anyone reporting them:
 
-The Windows and macOS builds carried Bitcoin's logo. Four icon files ship
-with the GUI and the rename replaced one of them, so since v0.1.8 the window,
-the taskbar, the dock and the .exe itself showed the wrong mark on a wallet
-holding real coins. All four are now generated from one master.
+The graphical wallet would have carried Bitcoin's logo. Four icon files ship
+with the GUI -- the window and taskbar icon, its testnet variant, the macOS
+bundle icon and the splash image -- and the rename replaced one of them. The
+releases are built --without-gui, so nothing published so far has shown the
+wrong mark to anybody; the first GUI built from this tree would have. All
+four are generated from one master now, and preflight refuses a release whose
+icons are missing or malformed.
 
 The miner reached for the mainnet RPC port whatever --network said, so mining
 alone on testnet or regtest failed with "could not connect" — which reads as
