@@ -22,6 +22,22 @@ inside one message cost more still.
 
 ---
 
+## Baseline to judge these posts against
+
+The founder published them to every channel on **2026-09-25**. Measured at
+`2026-09-25T19:07:08Z`, immediately after, so any movement can be attributed:
+
+| | at publication |
+|---|---|
+| height | 7,428 |
+| network | 250,241 H/s |
+| peers | 46 |
+| our pool | 41 miners, 37 workers, 220,604 H/s |
+
+That last pair is the point of the posts: the pool is 88% of the network at
+this moment. Judge them by whether independent finders appear, not by
+engagement.
+
 ## The order, and who posts what
 
 | | where | what |
