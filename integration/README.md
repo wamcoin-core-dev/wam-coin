@@ -7,13 +7,25 @@ Each subdirectory holds what that venue actually consumes. Five of the six take
 a pull request rather than a web form; the sixth, Maya, is not a listing at all
 but a chain client inside their node.
 
+> **Every pull request in this table is gone, measured 2026-09-25.** All five
+> answer 404 — not closed, not merged: absent. They were opened from
+> `wam-coin-official`, and when GitHub suspended that account on 2026-09-24 it
+> took the account's pull requests and forks with it. From each project's side
+> a submission vanished overnight with nobody saying anything, which is what
+> an abandoned coin looks like.
+>
+> Re-opening them is a new fork and a new PR from `wamcoin-core-dev` for each,
+> plus one short message saying what happened. The content of every entry
+> below is unchanged and still correct; only the account that carried it is
+> gone.
+
 | Venue | What it consumes | Ready |
 |---|---|---|
-| [Komodo Wallet](komodo/) | PR to `GLEECBTC/coins`: coin entry, electrum servers, explorer, icon | **open** [#1975](https://github.com/GLEECBTC/coins/pull/1975), sent 2026-08-30. [#21](https://github.com/KomodoPlatform/coins/pull/21) went to a dead mirror first — see [SUBMIT.md](komodo/SUBMIT.md) |
-| [Block DX](blockdx/) | PR to `blocknetdx/blockchain-configuration-files`: 2 confs + manifest | **open, and being worked on** [#197](https://github.com/blocknetdx/blockchain-configuration-files/pull/197) |
-| [Haveno](haveno/) | PR to `haveno-dex/haveno`: asset class, test, service entry | closed [#2528](https://github.com/haveno-dex/haveno/pull/2528) — needs a market price first |
-| [BasicSwap DEX](basicswap/) | PR to `basicswap/basicswap`: a Python interface package | closed [#701](https://github.com/basicswap/basicswap/pull/701) — *"mainnet is scheduled for 2026-09-15"*, resubmit after |
-| [Bisq](bisq/) | PR to `bisq-network/bisq`: asset class, test, service entry | closed [#8030](https://github.com/bisq-network/bisq/pull/8030) — **closed on a mistaken identity**, corrected and resent |
+| [Komodo Wallet](komodo/) | PR to `GLEECBTC/coins`: coin entry, electrum servers, explorer, icon | **gone with the account** — was [#1975](https://github.com/GLEECBTC/coins/pull/1975), sent 2026-08-30, open until 2026-09-24. [#21](https://github.com/KomodoPlatform/coins/pull/21) went to a dead mirror first — see [SUBMIT.md](komodo/SUBMIT.md) |
+| [Block DX](blockdx/) | PR to `blocknetdx/blockchain-configuration-files`: 2 confs + manifest | **gone with the account** — was [#197](https://github.com/blocknetdx/blockchain-configuration-files/pull/197), open and being worked on. The entry now carries v0.1.10 |
+| [Haveno](haveno/) | PR to `haveno-dex/haveno`: asset class, test, service entry | gone with the account — was [#2528](https://github.com/haveno-dex/haveno/pull/2528), closed, needs a market price first |
+| [BasicSwap DEX](basicswap/) | PR to `basicswap/basicswap`: a Python interface package | gone with the account — was [#701](https://github.com/basicswap/basicswap/pull/701), closed with *"mainnet is scheduled for 2026-09-15"*, resubmit after |
+| [Bisq](bisq/) | PR to `bisq-network/bisq`: asset class, test, service entry | gone with the account — was [#8030](https://github.com/bisq-network/bisq/pull/8030), **closed on a mistaken identity**, corrected and resent |
 | [Maya Protocol](maya/) | a node chain client in Go, not a listing | months, and theirs to want |
 
 And one that is not a venue at all but blocks three of them:
