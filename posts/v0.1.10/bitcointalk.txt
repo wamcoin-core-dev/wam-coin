@@ -39,23 +39,27 @@ Before v0.1.10 both options had been proved on one Linux laptop and shipped
 to the other two platforms untested, which is not the same thing as
 working.
 
-[b]Our pool's fee goes from 0% to 1%[/b]
-
-There is more than one WAM pool now, and ours charged nothing while it was the
-only one there was. A pool charging nothing is not competing with the others —
-nobody can offer less than nothing. Matching their rate means a miner picks a
-pool for how it runs rather than for a number that cannot be beaten. The 1% is
-taken after the chain's 5% treasury output and goes to an address that
-receives nothing else, named on the pool's own page.
+[b]The source now lives in three places, at three different companies[/b]
 
 [code]
-pool.wamcoin.org:3333             run by this project, 1% fee
-wam.ariabrain.com:3333
-stratum.cryptopickaxe.co.uk:6040
+https://gitlab.com/WAMCoin/wam-coin
+https://github.com/wamcoin-core-dev/wam-coin
+https://gitea.com/WAMCoin/wam-coin
 [/code]
 
-Ask their operators about their own fees and payout rules. All three answered
-when this was written.
+Same repository, pushed to all three together. Clone whichever you prefer. If
+one is unreachable the other two are, and nobody needs us online to be told
+which to use -- which is the whole point of there being three.
+
+In September this project had one, and for a day nobody outside could reach
+the code, the downloads or the site, because all three lived behind the same
+account. Git is distributed and we were using it as though it were not.
+
+The downloads are on none of the three. They are at
+https://wamcoin.org/downloads/, served from hardware this project runs, and
+the signature is what makes them checkable: a signature covers the files and
+never the place they are hosted, so where you fetch from changes nothing
+about what you can verify.
 
 [b]Also fixed in this release[/b]
 

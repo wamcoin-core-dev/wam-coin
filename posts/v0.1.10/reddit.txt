@@ -42,6 +42,24 @@ platforms untested, which is not the same thing as working.
 **It is not a mandatory upgrade.** No consensus rule changed and a v0.1.9
 node validates exactly the same blocks. Upgrade if you want to mine alone.
 
+**The source lives in three places, at three different companies:**
+
+* https://gitlab.com/WAMCoin/wam-coin
+* https://github.com/wamcoin-core-dev/wam-coin
+* https://gitea.com/WAMCoin/wam-coin
+
+Same repository, pushed to all three together. Clone whichever you prefer; if
+one is unreachable the other two are, and nobody needs us online to be told
+which to use. In September this project had one, and for a day nobody outside
+could reach the code, the downloads or the site, because all three sat behind
+the same account. Git is distributed and we were using it as though it were
+not.
+
+The downloads are on none of the three. They are at wamcoin.org/downloads/,
+on hardware this project runs, and the signature covers the files rather than
+the place they are hosted -- so where you fetch from changes nothing about
+what you can check.
+
 RandomX proof of work, 120 second blocks, 22,000,000 cap, no ICO and no
 pre-sale. The chain has been live since 15 September 2026.
 

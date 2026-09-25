@@ -13,19 +13,17 @@ block on all three before it ships.
 gitlab.com/WAMCoin/wam-coin
 
 
-POST 2 — optional, a day later. The fee change. 258 characters.
+POST 2 — a day later. The three homes. 265 characters, counted.
 ===============================================================
 
-Our pool fee goes 0% → 1%, matching the other WAM pools.
+WAM's source lives in three places, at three companies:
 
-0% made sense when ours was the only one. There are more now, and nobody can
-compete with nothing.
+gitlab.com/WAMCoin/wam-coin
+github.com/wamcoin-core-dev/wam-coin
+gitea.com/WAMCoin/wam-coin
 
-pool.wamcoin.org:3333
-wam.ariabrain.com:3333
-stratum.cryptopickaxe.co.uk:6040
-
-Pick one on how it runs.
+One repository, pushed to all three. If one is unreachable, the other two
+are — and you don't need us to say which.
 
 
 NOTES
@@ -34,9 +32,9 @@ NOTES
 Post 1 alone if you post only one. It is the release and the invitation in the
 same breath, and it needs no second message to make sense.
 
-Do not merge the two. A release announcement that also raises a fee reads as
-a fee rise dressed up as news, and the fee has its own reasoning that does not
-fit in 280 characters.
+Do not merge the two. A release announcement that also explains where the code
+moved reads as a project with a problem rather than one with a spare, and the
+three homes are worth their own post on the day after the release.
 
 No hash rate figure and no block height in either. Both move, an X post does
 not, and a stale number is worse than no number on the one platform where the

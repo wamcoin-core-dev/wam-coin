@@ -57,25 +57,27 @@ Full instructions for all three: https://wamcoin.org/mine
 
 --------------------------------------------------------------- 4 of 4
 
-**And a change on our side: our pool's fee goes from 0% to 1%.**
-
-We set it to 0% when pool.wamcoin.org was the only pool there was. There are
-more now, and a pool charging nothing is not really competing with the others
-— nobody can offer less than nothing. Matching their rate means you pick a
-pool for how it runs rather than for a number that cannot be beaten.
+**The source now lives in three places, at three different companies.**
 
 ```
-pool.wamcoin.org:3333             ours, 1% fee
-wam.ariabrain.com:3333
-stratum.cryptopickaxe.co.uk:6040
+https://gitlab.com/WAMCoin/wam-coin
+https://github.com/wamcoin-core-dev/wam-coin
+https://gitea.com/WAMCoin/wam-coin
 ```
 
-Ask their operators about their fees and payout rules — those are theirs to
-state, not ours to state for them. All three answered when this was written.
+Same repository, pushed to all three together. Clone whichever you prefer. If
+one of them is unreachable, the other two are, and you do not need us online
+to tell you which to use — that is the whole point of there being three.
 
-The 1% is taken after the chain's 5% treasury output and goes to an address
-that receives nothing else, named on pool.wamcoin.org, so what stays in the
-pool wallet is miners' money and can be checked against what the pool says it
-owes.
+In September this project had one, and for a day nobody outside could reach
+the code, the downloads or the site, because they all lived behind the same
+account. Git is distributed and we were using it as though it were not.
 
-If you mine with us, nothing breaks and there is nothing you need to do.
+**The downloads are on none of the three.** They are at
+https://wamcoin.org/downloads/, on hardware this project runs, and the
+signature is what makes them checkable: a signature covers the files, never
+the place they are hosted, so where you fetch from changes nothing about what
+you can verify.
+
+The list of everything that is ours — and of one name that is not ours any
+more — is signed with the release key: https://wamcoin.org/CHANNELS.txt
