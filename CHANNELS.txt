@@ -24,7 +24,15 @@
                                                               one proves itself)
    tiktok         https://www.tiktok.com/@wamcoin
    twitch         https://www.twitch.tv/wamcoin
-   email          wam.coin.official@proton.me
+   email          wam.coin.official@proton.me   (write here)
+   email          wamcoin.core@gmail.com        (if the first cannot be
+                                                 reached)
+
+ Write to the first. The second is listed so that one address being closed
+ or unreachable never leaves anybody without a way to write to this project
+ -- and because this list is signed, so nobody but us could publish a
+ replacement on our behalf afterwards. An address that is not one of these
+ two is not a contact for WAM Coin, whatever it claims.
 
  And the three services the network itself runs:
 
@@ -61,11 +69,9 @@
  on this file.
 
  A third was listed there until 2026-09-24: github.com/wam-coin-official.
- That account was suspended that day over a GitHub Actions policy violation
- -- a step in our build ran the miner on their machines, which their terms
- forbid. It was our mistake, the step is removed, and an appeal is in. The
- repository moved to GitLab and the downloads moved to wamcoin.org, where
- they are served from machines this project owns.
+ It is locked, and nothing is published there. The repository is at the
+ three sources named above, and the downloads are at wamcoin.org, served
+ from machines this project owns.
 
  THREE COPIES OF THE SOURCE, AND WHY
 
@@ -81,12 +87,15 @@
  A reader who finds one of the three gone should not need to be told
  where to go. He should already be holding the other two.
 
- THE NAME THAT IS NO LONGER OURS
+ THE NAME THAT IS LOCKED, AND STILL OURS
 
- github.com/wam-coin-official is not ours any more, and nothing appearing
- there should be trusted as this project's. If that name is ever active
- again and this file does not list it, it is not us. That is the whole
- reason this file is signed: the list is what counts, never the name.
+ github.com/wam-coin-official is ours and is locked. Nobody else can take
+ that name: it stays with the account, and the account stays with our
+ email. Nothing is published there today, and nothing appearing there
+ should be trusted as this project's. If it is ever active again it will be
+ listed in this file before anything on it is ours -- and if it is active
+ and this file does not list it, it is not us. That is the whole reason
+ this file is signed: the list is what counts, never the name.
 
  THE ONE ACCOUNT THAT PROVES ITSELF WITHOUT US
 
@@ -182,6 +191,30 @@
 
 
 ---------------------------------------------------------------------------
+ Revision 4 -- 2026-09-25
+   Three sources instead of one, a second contact address, and a correction
+   about the fourth name.
+
+   The repository is now published at GitLab, GitHub and Gitea, at three
+   different companies, because on 24 September this project had one and
+   lost it for a day -- and the code, the downloads and the website went
+   dark together, since all three sat behind it. A reader who finds one
+   gone should already be holding the other two rather than waiting for us
+   to tell him where to look.
+
+   The contact address was one address, which is the same fault in a
+   smaller place: an address that is closed or unreachable leaves a reader
+   with no way to write to us, and this list being signed means nobody
+   could publish a replacement on our behalf. There are two now and either
+   one reaches us.
+
+   And a correction to what revision 3's successor said about
+   github.com/wam-coin-official: it said the name was no longer ours. That
+   was wrong. A locked account keeps its name, and the account stays with
+   our email, so nobody else can take it and it may yet come back to us.
+   What the reader needs is not a claim of ownership either way -- it is
+   this file: if a name is active and not listed here, it is not us.
+
  Revision 3 -- 2026-09-04
    Added the BitcoinTalk announcement thread and the contact email. Both
    were official the whole time. The thread has been up since 14 August,

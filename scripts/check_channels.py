@@ -233,15 +233,25 @@ def main():
     # was published on the day and must not be edited; doing so would make
     # this repository disagree with what is on BitcoinTalk.
     #
-    # And the file does not ignore that name. It carries a section saying the
-    # name is not ours any more and that nothing appearing there should be
-    # trusted, which is the opposite of the silent omission this check exists
-    # to catch. So a host the file names in that section counts as handled.
+    # And the file does not ignore that name. It carries a section that sets
+    # the name apart and says nothing appearing there should be trusted, which
+    # is the opposite of the silent omission this check exists to catch. So a
+    # host the file names in that section counts as handled.
     #
     # It is matched on the host, not the URL: the section cannot list every
     # path that was ever linked, and the danger being checked for belongs to
     # the account, not to one page under it.
-    DISOWN_MARK = "IS NO LONGER OURS"
+    #
+    # THE MARK IS THE HEADING'S STEM, NOT ITS CLAIM. It was "IS NO LONGER
+    # OURS" until 2026-09-25, when the founder corrected the claim itself: a
+    # suspended account keeps its name, the name stays with our email, and it
+    # may yet come back -- so the file now says the name is LOCKED, AND STILL
+    # OURS. The heading changed, this check stopped finding the section it was
+    # looking for, and six archived posts were instantly reported as channels
+    # of ours missing from the list. A check hooked to a sentence that is
+    # allowed to be rewritten fails the moment somebody improves the wording,
+    # and blames the file for it.
+    DISOWN_MARK = "THE NAME THAT IS"
     disowned = set()
     if DISOWN_MARK in canon_text:
         tail = canon_text.split(DISOWN_MARK, 1)[1]
