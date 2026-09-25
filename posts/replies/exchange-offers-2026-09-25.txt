@@ -1,0 +1,76 @@
+THREE LISTING OFFERS, ONE ANSWER
+================================
+
+Received 2026-09-24 and 2026-09-25, on Discord:
+
+  Dorion MC     BiFinance, "Verified Listing Partner"   #general-chat
+  Martins Bond  NonKYC Exchange, listing promoter       DM
+  EsteparioS    TidoEx development team                 DM
+
+All three are centralised exchanges. The founder's decision: thank them and
+state the policy rather than negotiate. TidoEx asked outright for the project
+to provide liquidity for the pair, which is the thing this project has
+nothing to provide with.
+
+WHAT THE ANSWER SAYS, AND WHAT IT DELIBERATELY DOES NOT
+
+It states the action, not the creed: we do not pay, we do not provide
+liquidity, and there is no coin to provide it with. It does NOT recite "this
+project does not create value" — that line is written once in the paper, and
+repeating it at every newcomer is a lecture, not honesty.
+
+It also does not leave a door closed that is not ours to close. An exchange
+that lists WAM on its own decision gets every technical answer for free, and
+the one venue where WAM already trades got there exactly that way: a
+maintainer read the chain, ran a test swap himself, and merged it, with
+nothing paid and nothing promised.
+
+Answered in public where the question was public, privately where it was
+private. The public one is shorter on purpose -- what is said in a channel is
+read a thousand times, and length there turns into preaching.
+
+--------------------------------------------------------- #general-chat
+
+@Dorion MC Thanks for the offer. Answering here since you asked here, and so
+nobody has to ask twice:
+
+WAM does not pay listing fees and does not provide liquidity for its own
+pairs. There is no allocation for either — every coin in existence was mined,
+none was sold, and the project holds nothing it could put into a pool. That
+rules out the usual arrangement rather than any particular exchange.
+
+If an exchange decides to list WAM on its own, everything it needs is already
+public — source, signed releases, an explorer and Electrum servers — and we
+answer technical questions quickly and for free. That is how WAM got onto
+GLEEC DEX: a maintainer read the chain, ran a test swap himself, and merged
+it. Nothing was paid and nothing was promised.
+
+--------------------------------------------------------- DM, both of them
+
+Thank you for reaching out, and for taking the time to look at WAM.
+
+The answer is no, and it is not about your exchange in particular. WAM does
+not pay listing fees, does not provide liquidity for its own pairs, and does
+not fund a market for its own coin. There is no allocation for that and there
+will not be one: every coin in existence was mined, none was sold, and the
+project holds nothing it could put into a pool.
+
+That rules out the usual listing arrangement rather than your exchange. If an
+exchange ever decides to list WAM on its own, everything needed is already
+public — source, signed releases, an explorer and Electrum servers — and we
+will answer any technical question quickly and for free.
+
+WAM is already tradeable on GLEEC DEX, and it got there exactly that way: a
+maintainer read the chain, ran a test swap himself, and merged it. Nothing
+was paid and nothing was promised.
+
+Good luck with the exchange.
+
+--------------------------------------------------- add for TidoEx only
+
+(before the last line)
+
+You mentioned the listing is free and that the project would provide
+liquidity for the pair and help share the announcement. The second we can do
+and would be glad to. The first is the one thing we cannot, for the reason
+above — it is not a cost we are avoiding, it is coin that does not exist.
