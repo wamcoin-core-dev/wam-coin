@@ -128,15 +128,62 @@ def main():
     # for an exchange deposit, so the entry and the documentation now ask for
     # the same thing -- they did not before, and the machine-readable copy was
     # the lower of the two, which is the wrong way round.
+    # A judgement, not a constant -- and no longer ours alone.
+    #
+    # It was raised to 60 on 2026-09-06, matching the depth this project
+    # publishes for an exchange deposit, because the cost of reversing a
+    # confirmation is set by hashrate and this network is weaker than one
+    # desktop computer.
+    #
+    # It is 15 from 2026-09-22, because the venue's own maintainer lowered it
+    # and merged: 60 confirmations at a 120 second target is a two hour swap,
+    # and the backend cannot hold one open that long -- so 60 did not mean a
+    # safer swap, it meant no swap. His test at 4 confirmations completed in
+    # ten minutes. 15 is about thirty minutes.
+    #
+    # THE TRADE IS REAL AND IS WRITTEN DOWN, in komodo/NOTES.md: the window in
+    # which a swap could be reversed by a party able to rewrite the chain
+    # falls from two hours to thirty minutes. The depth this project publishes
+    # for an exchange DEPOSIT is a different number and stays at 60; a deposit
+    # can wait two hours and an atomic swap cannot.
+    REQUIRED_CONFIRMATIONS = 15
+
     rc = entry.get("required_confirmations")
-    if rc != 60:
-        bad(f"required_confirmations is {rc}. It was raised to 60 on 2026-09-06, "
-            f"matching the depth this project publishes for an exchange deposit, "
-            f"because the cost of reversing a confirmation is set by hashrate and "
-            f"this network is weaker than one desktop computer. Changing it is a "
-            f"decision, not a typo -- update NOTES.md with the reason.")
+    if rc != REQUIRED_CONFIRMATIONS:
+        bad(f"required_confirmations is {rc}, and this project's decision is "
+            f"{REQUIRED_CONFIRMATIONS}. Changing it is a decision, not a typo "
+            f"-- change it here and update NOTES.md with the reason.")
     else:
-        ok(f"{'required_confirmations':<18} 60  (a judgement, not a constant)")
+        ok(f"{'required_confirmations':<18} {REQUIRED_CONFIRMATIONS}  "
+           f"(a judgement, not a constant)")
+
+    # And the live entry is not ours to set alone any more, so it is read
+    # rather than assumed. WAM was merged into GLEECBTC/coins on 2026-09-22 by
+    # that repository's maintainer, in a pull request of his own -- which is
+    # why it survived our account being suspended, and why the value there can
+    # change without anybody telling us.
+    try:
+        import urllib.request as _u
+        _req = _u.Request("https://raw.githubusercontent.com/GLEECBTC/coins/master/coins",
+                          headers={"User-Agent": "wam-listing-check"})
+        with _u.urlopen(_req, timeout=25) as f:
+            live = [c for c in json.load(f) if c.get("coin") == "WAM"]
+        if not live:
+            bad("WAM is no longer in GLEECBTC/coins. It was merged there on "
+                "2026-09-22 and is what dex.gleec.com reads.")
+        else:
+            drift = {k: (v, live[0].get(k)) for k, v in entry.items()
+                     if k in live[0] and live[0].get(k) != v}
+            if drift:
+                for k, (ours, theirs) in sorted(drift.items()):
+                    bad(f"live entry disagrees with ours: {k} is {theirs!r} "
+                        f"at GLEECBTC/coins and {ours!r} here")
+            else:
+                ok(f"{'live entry':<18} matches ours, field for field")
+    except Exception as e:
+        unmeasured(f"could not read the merged entry at GLEECBTC/coins, so "
+                   f"whether ours still matches what dex.gleec.com reads is "
+                   f"unknown ({e})")
 
     # Fields comparable entries carry. Missing one is not fatal, but it is
     # the kind of omission a reviewer notices and we would rather not.

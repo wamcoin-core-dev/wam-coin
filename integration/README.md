@@ -7,21 +7,28 @@ Each subdirectory holds what that venue actually consumes. Five of the six take
 a pull request rather than a web form; the sixth, Maya, is not a listing at all
 but a chain client inside their node.
 
-> **Every pull request in this table is gone, measured 2026-09-25.** All five
+> **Every pull request WE opened is gone, measured 2026-09-25.** All five
 > answer 404 — not closed, not merged: absent. They were opened from
 > `wam-coin-official`, and when GitHub suspended that account on 2026-09-24 it
 > took the account's pull requests and forks with it. From each project's side
 > a submission vanished overnight with nobody saying anything, which is what
 > an abandoned coin looks like.
 >
-> Re-opening them is a new fork and a new PR from `wamcoin-core-dev` for each,
-> plus one short message saying what happened. The content of every entry
-> below is unchanged and still correct; only the account that carried it is
-> gone.
+> **And one listing survived, because it was never ours.** Komodo is merged
+> and live: its maintainer opened a pull request under his own account and
+> merged it on 2026-09-22, so our account going dark did not touch it. That is
+> the single most useful fact in this file — a submission somebody else
+> carries is a submission we cannot lose.
+>
+> Re-opening the other four is a new fork and a new PR from `wamcoin-core-dev`
+> for each, plus one short message. Not all in one day: five forks and five
+> pull requests from an account born yesterday is a pattern, and one is work.
+> The content of every entry below is unchanged and still correct; only the
+> account that carried it is gone.
 
 | Venue | What it consumes | Ready |
 |---|---|---|
-| [Komodo Wallet](komodo/) | PR to `GLEECBTC/coins`: coin entry, electrum servers, explorer, icon | **gone with the account** — was [#1975](https://github.com/GLEECBTC/coins/pull/1975), sent 2026-08-30, open until 2026-09-24. [#21](https://github.com/KomodoPlatform/coins/pull/21) went to a dead mirror first — see [SUBMIT.md](komodo/SUBMIT.md) |
+| [Komodo Wallet](komodo/) | PR to `GLEECBTC/coins`: coin entry, electrum servers, explorer, icon | **MERGED 2026-09-22, live on dex.gleec.com** — not by our [#1975](https://github.com/GLEECBTC/coins/pull/1975) but by the maintainer's own [#2034](https://github.com/GLEECBTC/coins/pull/2034), which is why it survived. See [NOTES.md](komodo/NOTES.md) |
 | [Block DX](blockdx/) | PR to `blocknetdx/blockchain-configuration-files`: 2 confs + manifest | **gone with the account** — was [#197](https://github.com/blocknetdx/blockchain-configuration-files/pull/197), open and being worked on. The entry now carries v0.1.10 |
 | [Haveno](haveno/) | PR to `haveno-dex/haveno`: asset class, test, service entry | gone with the account — was [#2528](https://github.com/haveno-dex/haveno/pull/2528), closed, needs a market price first |
 | [BasicSwap DEX](basicswap/) | PR to `basicswap/basicswap`: a Python interface package | gone with the account — was [#701](https://github.com/basicswap/basicswap/pull/701), closed with *"mainnet is scheduled for 2026-09-15"*, resubmit after |

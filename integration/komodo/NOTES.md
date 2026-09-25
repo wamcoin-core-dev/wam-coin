@@ -1,5 +1,35 @@
 # Komodo Wallet — what a submission needs
 
+> **MERGED AND LIVE since 2026-09-22.** WAM is in `GLEECBTC/coins` and trades
+> on dex.gleec.com. It did not get there by our pull request. `cipig`, that
+> repository's maintainer, wrote on 2026-09-21 that he had to fix conflicts
+> so he opened one of his own — [#2034](https://github.com/GLEECBTC/coins/pull/2034)
+> — ran a test swap himself, changed one field, and merged it on 2026-09-22.
+> Because that pull request was his and not ours, it survived our GitHub
+> account being suspended on 2026-09-24 while all five of ours vanished.
+>
+> **He lowered `required_confirmations` from 60 to 15, and he was right.**
+> 60 confirmations at a 120 second target is a two hour swap, and the backend
+> cannot hold one open that long: 60 did not mean a safer swap, it meant no
+> swap at all. His test at 4 confirmations completed in ten minutes. 15 is
+> about thirty minutes, and he said it can be raised later if swaps start
+> failing.
+>
+> **What it costs, stated rather than glossed:** the window in which a swap
+> could be undone by a party able to rewrite the chain falls from two hours to
+> thirty minutes. That number is set by hashrate, and this network's is small.
+> It is a real exposure and it is accepted knowingly, for the one reason that
+> the alternative is a listing nobody can trade on.
+>
+> **The deposit depth this project publishes stays 60.** It is a different
+> question with a different answer: a deposit can wait two hours and an
+> atomic swap cannot. Do not let the two numbers be "unified" by anybody
+> tidying up.
+>
+> **Still wrong in the live entry:** its `links.github` points at
+> `wam-coin-official`, which is locked. One line, and it is the smallest
+> honest reason to go back to that repository.
+
 A pull request to [`KomodoPlatform/coins`](https://github.com/KomodoPlatform/coins),
 not a web form. Four things go in, and all four are ready.
 
