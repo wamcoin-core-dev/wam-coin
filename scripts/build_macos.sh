@@ -151,8 +151,23 @@ HOST_TRIPLET="$MACH-apple-darwin"
 printf '\n%s2. depends for %s%s\n' "$BLD" "$HOST_TRIPLET" "$OFF"
 log "boost 1.81, libevent, sqlite3 -- 20 to 60 minutes the first time"
 
+# THE GRAPHICAL WALLET IS OFF BY DEFAULT HERE TOO, AND FOR THE SAME REASON
+# build_windows.sh gives: depends has to cross-build Qt before anything can
+# link against it, and that is an hour or more spent before a line of WAM
+# code is reached. The node, the seed and the miner want none of it.
+#
+# WAM_WITH_GUI=1 asks for it. Nothing else about this script changes when it
+# is off: the build that produced every macOS release so far must not become
+# slower or more fragile because a wallet now exists.
+WITH_GUI="${WAM_WITH_GUI:-0}"
+QT_OPT="NO_QT=1"
+if [ "$WITH_GUI" = "1" ]; then
+    QT_OPT=""
+    log "WAM_WITH_GUI=1 -- depends will build Qt for $HOST_TRIPLET as well"
+fi
+
 make -C "$CORE_DIR/depends" \
-    "HOST=$HOST_TRIPLET" NO_QT=1 NO_ZMQ=1 NO_UPNP=1 NO_NATPMP=1 NO_USDT=1 \
+    "HOST=$HOST_TRIPLET" $QT_OPT NO_ZMQ=1 NO_UPNP=1 NO_NATPMP=1 NO_USDT=1 \
     -j"$JOBS" > "$BUILD_DIR/depends-macos.log" 2>&1 \
     || die "depends failed for $HOST_TRIPLET. The last 30 lines:
 $(tail -30 "$BUILD_DIR/depends-macos.log" | sed 's/^/          /')
@@ -164,9 +179,11 @@ ok "depends built, config.site present"
 
 printf '\n%s3. the node%s\n' "$BLD" "$OFF"
 log "configure --host=$HOST_TRIPLET"
+GUI_FLAG="--without-gui"
+[ "$WITH_GUI" = "1" ] && GUI_FLAG="--with-gui=qt5"
 CONFIG_SITE="$CONFIG_SITE_PATH" ./configure \
     --prefix=/ \
-    --without-gui \
+    "$GUI_FLAG" \
     --disable-zmq \
     --disable-tests-fuzz-binary \
     CPPFLAGS="$RANDOMX_CFLAGS" \
@@ -209,7 +226,12 @@ printf '\n%swhat came out%s\n' "$BLD" "$OFF"
 
 mkdir -p "$OUT_DIR"
 FOUND=0
-for exe in wamd wam-cli wam-tx wam-util wam-wallet; do
+# wam-qt is built into src/qt, and only when the GUI was asked for -- its
+# absence on a node-only build is not a failure.
+GUI_EXES=""
+[ "$WITH_GUI" = "1" ] && GUI_EXES="qt/wam-qt qt/bitcoin-qt"
+
+for exe in wamd wam-cli wam-tx wam-util wam-wallet $GUI_EXES; do
     p="src/$exe"
     [ -f "$p" ] || continue
     FMT="$(file -bL "$p")"
