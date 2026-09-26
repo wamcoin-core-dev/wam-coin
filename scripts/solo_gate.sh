@@ -72,9 +72,18 @@ CACHE="/var/lib/wam-solo-gate"
 
 fetch_release() {
     local ver base dir
-    ver="$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' "$HERE/CHANNELS.txt" 2>/dev/null | head -1)"
-    [ -n "$ver" ] || ver="$(curl -fsS https://wamcoin.org/downloads/ 2>/dev/null \
-        | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | sort -V | tail -1)"
+    # THE DOWNLOADS INDEX IS THE AUTHORITY, and nothing else is.
+    #
+    # The first attempt read the newest version out of CHANNELS.txt and got
+    # v0.1.6 -- a number that appears there in a sentence about the signing
+    # key, not as a release. The gate then asked for a release that is not
+    # published any more and called our own site broken.
+    #
+    # The directory listing is where the files actually are, so it is the
+    # only thing asked. `sort -V` and not `tail -1` alone, because v0.1.10
+    # sorts before v0.1.9 in every other order.
+    ver="$(curl -fsS https://wamcoin.org/downloads/ 2>/dev/null \
+        | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | sort -V -u | tail -1)"
     [ -n "$ver" ] || { echo "solo_gate: could not learn the current version" >&2; return 1; }
 
     base="https://wamcoin.org/downloads/$ver"
