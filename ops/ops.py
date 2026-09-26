@@ -272,7 +272,7 @@ for u in %s $(%s); do
   printf '%%s %%s %%s\n' "$u" "$a" "$e"
 done
 echo "###backup"; ls -t /root/backups/*.gpg 2>/dev/null | head -1 | xargs -r stat -c %%Y
-echo "###alarms"; ls /var/lib/wam-reorg/ALARM-* 2>/dev/null | wc -l
+echo "###alarms"; ls /var/lib/wam-reorg/ALARM-* /var/lib/wam-solo-gate/ALARM-* /var/lib/wam-alarms/ALARM-* 2>/dev/null | wc -l
 echo "###motd"; [ -f /etc/update-motd.d/98-wam-version ] && echo yes || echo no
 # The state of the SERVICE, not of the timer above it. This panel read only
 # is-active on the timer, and a timer stays active however often the service

@@ -33,8 +33,9 @@
 #
 #  WHAT IT LEAVES BEHIND
 #
-#  On failure, an ALARM file in the directory the ops panel already counts,
-#  and a non-zero exit so systemd records the failure and wam-alert@ fires.
+#  On failure, an ALARM file in ITS OWN state directory -- which the ops
+#  panel counts alongside the other subsystems' -- and a non-zero exit so
+#  systemd records it and wam-alert@ fires.
 #  On success it removes its own alarm, because an alarm nobody clears is an
 #  alarm everybody learns to ignore.
 # ===========================================================================
@@ -43,7 +44,18 @@ set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)"
 BIN="${1:-/opt/wam-current-bin}"
-ALARM_DIR="/var/lib/wam-reorg"
+# ITS OWN DIRECTORY, AND NOT THE REORG WATCHER'S.
+#
+# This wrote its alarm into /var/lib/wam-reorg because the ops panel already
+# counted files called ALARM-* there. check_reorg.py reads that same
+# directory and treats any ALARM-* in it as "an earlier run recorded a
+# reorganisation" -- so the first failure of this gate made the reorg watcher
+# fail on both networks and report a reorganisation that never happened.
+#
+# A subsystem's state directory is its own vocabulary. Borrowing it because
+# something else already looks there is how one defect corrupts a part that
+# was sound. The panel is taught to look here instead.
+ALARM_DIR="/var/lib/wam-solo-gate"
 ALARM="$ALARM_DIR/ALARM-solo-gate.txt"
 LOG="$(mktemp -t solo-gate-XXXXXX.log)"
 

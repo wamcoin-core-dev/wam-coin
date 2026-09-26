@@ -66,7 +66,7 @@ echo "###u";  cut -d. -f1 /proc/uptime
 echo "###l";  cut -d' ' -f1 /proc/loadavg
 echo "###g";  git -C /opt/wam rev-parse --short HEAD 2>/dev/null
 echo "###b";  ls -t /root/backups/*.gpg 2>/dev/null | head -1 | xargs -r stat -c %Y
-echo "###a";  ls /var/lib/wam-reorg/ALARM-* 2>/dev/null | wc -l
+echo "###a";  ls /var/lib/wam-reorg/ALARM-* /var/lib/wam-solo-gate/ALARM-* /var/lib/wam-alarms/ALARM-* 2>/dev/null | wc -l
 echo "###v";  [ -f /etc/update-motd.d/98-wam-version ] && echo behind || echo current
 echo "###x"
 # The backup timers are DISCOVERED, not named.
