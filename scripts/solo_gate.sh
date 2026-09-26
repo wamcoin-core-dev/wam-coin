@@ -100,23 +100,49 @@ rc=0
             echo "  FAIL  the job test would not compile"
             rc=1
         else
+            # A PORT OF ITS OWN, AND A NODE THAT IS ACTUALLY READY.
+            #
+            # 29554 is this chain's regtest RPC port and is what the second
+            # half's node will take, so this one is moved out of its way --
+            # the first run of this gate failed with "the node never answered
+            # RPC" because two regtest nodes wanted the same port seconds
+            # apart.
+            #
+            # And readiness is asked of the node, not guessed from a file.
+            # The cookie is written early, while wamd is still loading P2P
+            # addresses and answering every RPC call with a warm-up error.
+            # Waiting for the file gave "getblocktemplate: Loading P2P
+            # addresses..." on the first run.
+            RTPORT=29654
             RTDIR="$JOBDIR/regtest-home"
             mkdir -p "$RTDIR"
-            printf 'regtest=1\n[regtest]\nrpcport=29554\nport=29555\nlisten=0\n' \
-                > "$RTDIR/wam.conf"
+            printf 'regtest=1\n[regtest]\nrpcport=%s\nport=%s\nlisten=0\n' \
+                "$RTPORT" "$((RTPORT + 1))" > "$RTDIR/wam.conf"
             "$BIN/wamd" -datadir="$RTDIR" -daemon >/dev/null 2>&1
-            for _ in $(seq 1 40); do
-                [ -f "$RTDIR/regtest/.cookie" ] && break
+            ready=0
+            for _ in $(seq 1 60); do
+                if "$BIN/wam-cli" -datadir="$RTDIR" -regtest getblockcount \
+                        >/dev/null 2>&1; then
+                    ready=1; break
+                fi
                 sleep 0.5
             done
-            if "$JOBDIR/solo_jobs" 29554 "$RTDIR/regtest/.cookie"; then
+            if [ "$ready" -ne 1 ]; then
+                echo "  FAIL  the regtest node never became ready"
+                rc=1
+            elif "$JOBDIR/solo_jobs" "$RTPORT" "$RTDIR/regtest/.cookie"; then
                 :
             else
                 echo "  FAIL  a solved block could not have been delivered"
                 rc=1
             fi
+            # Gone before the next half starts, not merely asked to go.
             "$BIN/wam-cli" -datadir="$RTDIR" -regtest stop >/dev/null 2>&1
-            sleep 2
+            for _ in $(seq 1 60); do
+                "$BIN/wam-cli" -datadir="$RTDIR" -regtest getblockcount \
+                    >/dev/null 2>&1 || break
+                sleep 0.5
+            done
         fi
         rm -rf "$JOBDIR"
     fi
