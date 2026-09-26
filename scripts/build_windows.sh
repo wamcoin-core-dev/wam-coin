@@ -239,14 +239,32 @@ log "boost, libevent, sqlite3 -- 20 to 60 minutes the first time"
 # The same features the Linux node leaves out, for the same reasons
 # install.sh gives: nothing here uses ZMQ, and there is no GUI. Every package
 # not built is an hour not spent and a dependency a downloader does not need.
+# THE GRAPHICAL WALLET IS OFF BY DEFAULT, AND THAT IS A TIME DECISION.
+#
+# Qt has to be cross-compiled by depends before anything can link against it,
+# and that is an hour or more on its own -- most of it spent before the first
+# line of WAM code is touched. The node, the seed and the miner need none of
+# it.
+#
+# So WAM_WITH_GUI=1 asks for it explicitly, and a release that carries a
+# Windows wallet is a release where somebody chose to wait. Everything else
+# about this script is unchanged when it is off, which is the point: the node
+# build that has worked since v0.1.8 must not become slower or more fragile
+# because a wallet now exists.
+WITH_GUI="${WAM_WITH_GUI:-0}"
+
 DEPENDS_OPTS=(
     "HOST=$HOST_TRIPLET"
-    "NO_QT=1"
     "NO_ZMQ=1"
     "NO_UPNP=1"
     "NO_NATPMP=1"
     "NO_USDT=1"
 )
+if [ "$WITH_GUI" = "1" ]; then
+    log "WAM_WITH_GUI=1 -- depends will build Qt for $HOST_TRIPLET as well"
+else
+    DEPENDS_OPTS+=("NO_QT=1")
+fi
 make -C "$CORE_DIR/depends" "${DEPENDS_OPTS[@]}" -j"$JOBS" \
     || die "depends failed for $HOST_TRIPLET"
 
@@ -268,9 +286,11 @@ RANDOMX_CFLAGS="-I$RANDOMX_DIR/src"
 RANDOMX_LIBS="$WIN_RX_BUILD/librandomx.a"
 
 log "configure --host=$HOST_TRIPLET"
+GUI_FLAG="--without-gui"
+[ "$WITH_GUI" = "1" ] && GUI_FLAG="--with-gui=qt5"
 CONFIG_SITE="$CONFIG_SITE_PATH" ./configure \
     --prefix=/ \
-    --without-gui \
+    "$GUI_FLAG" \
     --disable-zmq \
     --disable-tests-fuzz-binary \
     CPPFLAGS="$RANDOMX_CFLAGS" \
@@ -296,9 +316,16 @@ printf '\n%swhat came out%s\n' "$BLD" "$OFF"
 
 mkdir -p "$OUT_DIR"
 FOUND=0
+# wam-qt is built into src/qt, not src, so both are looked in -- and it is
+# only expected at all when the GUI was asked for, or its absence would be
+# read as a failed build on every node-only run.
+GUI_EXES=""
+[ "$WITH_GUI" = "1" ] && GUI_EXES="wam-qt bitcoin-qt"
+
 for exe in wamd wam-cli wam-tx wam-util wam-wallet \
-           bitcoind bitcoin-cli bitcoin-tx bitcoin-util bitcoin-wallet; do
-    for p in "src/$exe.exe" "src/$exe"; do
+           bitcoind bitcoin-cli bitcoin-tx bitcoin-util bitcoin-wallet \
+           $GUI_EXES; do
+    for p in "src/$exe.exe" "src/$exe" "src/qt/$exe.exe" "src/qt/$exe"; do
         [ -f "$p" ] || continue
         FMT="$(file -b "$p")"
         case "$FMT" in
