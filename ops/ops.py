@@ -225,7 +225,7 @@ echo "###uptime"; cut -d. -f1 /proc/uptime
 echo "###load"; cut -d' ' -f1-3 /proc/loadavg
 echo "###mem"; free -m | awk '/Mem:/{print $2, $7} /Swap:/{print $2, $3}'
 echo "###disk"; df -BM --output=avail,size / | tail -1 | tr -d 'M'
-echo "###git"; git -C /opt/wam rev-parse --short HEAD 2>/dev/null
+echo "###git"; timeout 5 git -C /opt/wam rev-parse --short HEAD 2>/dev/null
 # MAINNET. These three said -testnet, written in August when testnet was the
 # only chain. Mainnet opened on 15 September and for three days this panel
 # showed height 9964 -- the test chain -- while mainnet stood at 2551, with
@@ -235,9 +235,33 @@ echo "###git"; git -C /opt/wam rev-parse --short HEAD 2>/dev/null
 # /root/.wam, whose wam.conf says testnet=1, so an empty flag is the test
 # chain and not "the default one".
 WAMMAIN="-chain=main -conf=/root/.wam-mainnet/wam.conf -datadir=/root/.wam-mainnet"
-echo "###height"; /opt/wam-current-bin/wam-cli $WAMMAIN getblockcount 2>/dev/null
-echo "###tip"; /opt/wam-current-bin/wam-cli $WAMMAIN getbestblockhash 2>/dev/null
-echo "###peers"; /opt/wam-current-bin/wam-cli $WAMMAIN getconnectioncount 2>/dev/null
+# EVERY REMOTE CALL IS ON A LEASH, AND THE REASON IS NOT THE NODE.
+#
+# wamd serves four RPC threads. Anything that occupies them -- a long
+# getblock walk, a wallet rescan, an address scan over the whole chain --
+# leaves `wam-cli getblockcount` waiting in line, and it will wait for
+# minutes without complaining. The three calls below then never return, this
+# whole script never reaches its ###end, and rsh's 60 second limit expires.
+#
+# The panel's verdict for that was "France -- unreachable", in red, at the
+# top of the page, dragging the backup check red with it. On 2026-09-26 that
+# is exactly what happened, twice: the node was healthy, ssh answered in 1.7
+# seconds, every command in this script ran in under a fifth of a second when
+# measured -- and a chain-wide address scan was running against that node at
+# the same moment.
+#
+# A slow answer and a dead machine are not the same fact, and the panel
+# already has a colour for "not measured". So each call gets five seconds and
+# then gives up, leaving its field empty: the card stays alive and says the
+# height is unknown, which is true, instead of declaring a running server
+# dead, which is not.
+#
+# Five seconds is generous by two orders of magnitude for a local RPC call.
+# A node that cannot answer getblockcount within it is itself worth seeing --
+# as an unknown height on a live card, which is where the eye should go.
+echo "###height"; timeout 5 /opt/wam-current-bin/wam-cli $WAMMAIN getblockcount 2>/dev/null
+echo "###tip"; timeout 5 /opt/wam-current-bin/wam-cli $WAMMAIN getbestblockhash 2>/dev/null
+echo "###peers"; timeout 5 /opt/wam-current-bin/wam-cli $WAMMAIN getconnectioncount 2>/dev/null
 echo "###services"
 for u in %s $(%s); do
   # is-active prints "inactive" AND exits non-zero, so the obvious
