@@ -148,10 +148,29 @@ TS_TRANSLATION = re.compile(r'(<translation[^>]*>)([^<]*)(</translation>)')
 TS_NUMERUS = re.compile(r'(<numerusform>)([^<]*)(</numerusform>)')
 
 
+# THE SPELLINGS A TABLE CANNOT LIST.
+#
+# The table above knows Bitcoin, bitcoin, Bitcoins, bitcoins, BITCOIN and
+# BITCOINS. It does not know BİTCOİN -- Azerbaijani, with the Turkish dotted
+# capital I, U+0130 -- which is how bitcoin_az.ts shouted at the reader that
+# forgetting his passphrase would lose him BÜTÜN BİTCOİNLƏRİNİZİ.
+#
+# Chasing spellings one at a time is how the capital form was missed in the
+# first pass and this one in the second. So the last step is a rule rather
+# than a list: the word, in any case, with either dotted or dotless i in
+# either position, and a trailing s or not.
+#
+# It is safe for the same reason the table is: rewrite() is only ever applied
+# to the CONTENTS of a <string>, a <source>, a <translation>, a
+# <numerusform> or a tr() call. It never sees a class name, an #include or a
+# makefile variable.
+BITCOIN_ANY = re.compile(r'[Bb][İIiı][Tt][Cc][Oo][İIiı][Nn][Ss]?')
+
+
 def rewrite(text: str) -> str:
     for old, new in PHRASES:
         text = text.replace(old, new)
-    return text
+    return BITCOIN_ANY.sub('WAM', text)
 
 
 def process_ui(path: Path) -> int:
@@ -210,6 +229,24 @@ def main() -> int:
             for hit in hits:
                 if re.search(r'[Bb]itcoin', hit):
                     stale.append((path.name, hit[:70]))
+
+        # AND THE TRANSLATIONS, WHICH ARE MOST OF WHAT A PERSON READS.
+        #
+        # This block read forms/*.ui and *.cpp and nothing else, so it would
+        # have reported "no user-visible string says Bitcoin" while 123
+        # catalogues inside the same wallet said exactly that in 123
+        # languages. A check that looks only where the fault was already
+        # fixed is not a check.
+        #
+        # <name> is skipped here as it is in the rewriting pass: class names.
+        for path in sorted((qt / 'locale').glob('*.ts')):
+            text = path.read_text(encoding='utf-8')
+            for pattern in (TS_SOURCE, TS_TRANSLATION, TS_NUMERUS):
+                for m in pattern.finditer(text):
+                    if re.search(r'[Bb]itcoin', m.group(2), re.IGNORECASE):
+                        stale.append((path.name, m.group(2)[:70]))
+                        break
+
         if stale:
             print(f'{len(stale)} user-visible strings still say Bitcoin:')
             for name, hit in stale[:20]:

@@ -133,6 +133,32 @@ else
            Bitcoin's logo on a WAM wallet. Run: $PY scripts/make_icons.py"
 fi
 
+# THE WALLET'S OWN WORDS, IN EVERY LANGUAGE IT SHIPS.
+#
+# On 2026-09-26 the first graphical wallet this project ever built was opened
+# and read. Its welcome screen offered to download "the full Bitcoin block
+# chain (4 GB) starting with the earliest transactions in 2009", its Pay To
+# field gave a Bitcoin mainnet address as the example of a WAM one, and all
+# 123 translation catalogues inside it said Bitcoin -- the Spanish one told a
+# man who has run a node here since August that encrypting his wallet risked
+# TODOS TUS BITCOINS.
+#
+# None of it was reachable from the node, so no check had ever seen it: every
+# release until then was built --without-gui. This is the check that would
+# have, and it runs on the tree rather than on a built binary, so it answers
+# before an hour of compiling rather than after.
+if [ -d build/wam-core/src/qt ] || [ -d "$HOME/wam/build/wam-core/src/qt" ]; then
+    QT_T="build/wam-core"; [ -d "$QT_T/src/qt" ] || QT_T="$HOME/wam/build/wam-core"
+    if "$PY" scripts/rebrand_qt.py --tree "$QT_T" --check >/dev/null 2>&1; then
+        ok "the wallet's text, in every language it ships, says WAM"
+    else
+        bad "the GUI still names another coin in text a person reads.
+           Run: $PY scripts/rebrand_qt.py --tree $QT_T"
+    fi
+else
+    unchecked "no build tree with src/qt here, so the wallet's wording was not read"
+fi
+
 if [ -d build/wam-core/src ] || [ -d "$HOME/wam/build/wam-core/src" ]; then
     T="build/wam-core"; [ -d "$T/src" ] || T="$HOME/wam/build/wam-core"
     if "$PY" scripts/rename_binaries.py --tree "$T" --check >/dev/null 2>&1; then
