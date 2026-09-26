@@ -51,9 +51,88 @@ trap 'rm -f "$LOG"' EXIT
 
 stamp() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 
+# ---------------------------------------------------------------------------
+# WHICH BINARIES. The ones we publish -- not the ones installed here.
+#
+# The first run of this gate pointed at /opt/wam-current-bin and failed with
+# "unknown option '--solo'". That was true: this project's own servers run
+# binaries older than the feature, deliberately, because upgrading a node
+# that is serving the chain buys nothing and restarts the pool. So the gate
+# was asking a question about a build nobody downloads.
+#
+# What has to keep working is what a stranger fetches from wamcoin.org. So
+# that is what is fetched -- once per version, into a cache -- and its
+# signature is checked against the published key before a single byte of it
+# is run. A gate that runs unverified binaries to prove they are good has
+# already lost the argument it exists to win.
+#
+# Pass a directory as $1 to override, for testing a local build by hand.
+# ---------------------------------------------------------------------------
+CACHE="/var/lib/wam-solo-gate"
+
+fetch_release() {
+    local ver base dir
+    ver="$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' "$HERE/CHANNELS.txt" 2>/dev/null | head -1)"
+    [ -n "$ver" ] || ver="$(curl -fsS https://wamcoin.org/downloads/ 2>/dev/null \
+        | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | sort -V | tail -1)"
+    [ -n "$ver" ] || { echo "solo_gate: could not learn the current version" >&2; return 1; }
+
+    base="https://wamcoin.org/downloads/$ver"
+    dir="$CACHE/$ver"
+    if [ -x "$dir/wam-miner" ] && [ -x "$dir/wamd" ]; then
+        echo "$dir"; return 0
+    fi
+
+    local tmp; tmp="$(mktemp -d -t solo-gate-dl-XXXXXX)"
+    (
+        cd "$tmp" || exit 1
+        for f in SHA256SUMS SHA256SUMS.asc \
+                 "wam-coin-$ver-x86_64-linux-gnu.tar.gz" \
+                 "wam-miner-$ver-x86_64-linux-gnu.tar.gz"; do
+            curl -fsSLO "$base/$f" || exit 1
+        done
+        curl -fsSLO https://wamcoin.org/SIGNING-KEY.asc || exit 1
+
+        # The signature first, in a keyring of its own, against the published
+        # key -- and the checksums verified before anything is unpacked.
+        export GNUPGHOME="$tmp/gnupg"; mkdir -p "$GNUPGHOME"; chmod 700 "$GNUPGHOME"
+        gpg --batch --quiet --import SIGNING-KEY.asc || exit 1
+        gpg --batch --verify SHA256SUMS.asc SHA256SUMS >/dev/null 2>&1 || exit 1
+        grep -E "x86_64-linux-gnu" SHA256SUMS > wanted.txt || exit 1
+        sha256sum -c wanted.txt >/dev/null 2>&1 || exit 1
+
+        for t in wam-coin-*.tar.gz wam-miner-*.tar.gz; do tar xzf "$t" || exit 1; done
+        mkdir -p "$dir"
+        find . -type f \( -name wamd -o -name wam-cli -o -name wam-miner \) \
+            -exec cp {} "$dir/" \; || exit 1
+        chmod +x "$dir"/* 2>/dev/null
+    )
+    local rc=$?
+    rm -rf "$tmp"
+    [ "$rc" -eq 0 ] || { echo "solo_gate: could not fetch or verify $ver" >&2; return 1; }
+    echo "$dir"
+}
+
+if [ "$#" -eq 0 ]; then
+    mkdir -p "$CACHE" 2>/dev/null
+    if ! BIN="$(fetch_release)"; then
+        echo "solo_gate: the published release could not be fetched and verified."
+        echo "           That is not a pass -- it means nobody can check what we"
+        echo "           publish, including us."
+        exit 1
+    fi
+    echo "solo_gate: testing the PUBLISHED binaries in $BIN"
+fi
+
 if [ ! -x "$BIN/wam-miner" ]; then
     echo "solo_gate: no wam-miner in $BIN -- nothing to prove, and that is"
-    echo "           not a pass. Point this at the installed binaries."
+    echo "           not a pass."
+    exit 2
+fi
+
+if ! "$BIN/wam-miner" --help 2>&1 | grep -q -- "--solo"; then
+    echo "solo_gate: the miner in $BIN has no --solo. It predates the feature,"
+    echo "           so this gate can prove nothing about it."
     exit 2
 fi
 

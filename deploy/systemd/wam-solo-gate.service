@@ -24,11 +24,12 @@ OnFailure=wam-alert@%n.service
 Type=oneshot
 Environment=HOME=/root
 WorkingDirectory=/opt/wam
-ExecStart=/usr/bin/bash /opt/wam/scripts/solo_gate.sh /opt/wam-current-bin
+ExecStart=/usr/bin/bash /opt/wam/scripts/solo_gate.sh
 
 # It writes its own alarm where the ops panel already counts them, and
 # removes it again when the next run passes.
-ReadWritePaths=/var/lib/wam-reorg
+ReadWritePaths=/var/lib/wam-reorg /var/lib/wam-solo-gate
+StateDirectory=wam-solo-gate
 NoNewPrivileges=yes
 ProtectHome=read-only
 PrivateTmp=yes
