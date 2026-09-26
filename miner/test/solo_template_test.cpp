@@ -192,11 +192,93 @@ static void TestTemplate()
 
 // ---------------------------------------------------------------------------
 
+static void Is(bool got, bool want, const char* what)
+{
+    checks++;
+    if (got == want) { std::printf("  ok    %s\n", what); return; }
+    failures++;
+    std::printf("  FAIL  %s (wanted %s)\n", what, want ? "same work" : "new work");
+}
+
+/**
+ * The same work, or only the same moment?
+ *
+ * A solo miner polls the node every five seconds and the node answers every
+ * time. Before this was distinguished, each answer minted a new job id and
+ * the job a worker was still hashing scrolled out of a list bounded by count
+ * -- taking its transactions with it, so the block could not be built.
+ *
+ * On 2026-09-26 a miner solved height 7838 ninety-nine seconds after it
+ * started and the block was refused: "job 7838.9 is no longer held". These
+ * checks are that failure written down so it cannot come back quietly.
+ */
+static void TestSameWork()
+{
+    std::printf("\nthe same work, or only the same moment?\n");
+
+    json::Value t;
+    std::string err;
+    if (!json::ParseLine(kTemplate, t, err)) {
+        checks++; failures++;
+        std::printf("  FAIL  the captured template does not parse\n");
+        return;
+    }
+    const Bytes en1 = {0xde, 0xad, 0xbe, 0xef};
+    const char* addr = "wamrt1q9uynnmupf5jl920vgztyef0v3esfjvdzfxfhyt";
+    SoloTemplate a = BuildSoloTemplate(t, addr, NetParamsFor("regtest"),
+                                       "/wam-miner/", en1, 4);
+
+    // The node asked twice with nothing having happened in between. This is
+    // the case that was costing blocks: it must be the same work.
+    SoloTemplate b = BuildSoloTemplate(t, addr, NetParamsFor("regtest"),
+                                       "/wam-miner/", en1, 4);
+    Is(SameWork(a, b), true, "two identical templates are one job");
+
+    // curtime advances on every call. It is the one header field a miner may
+    // hold or roll on its own, and treating it as new work is exactly the bug.
+    SoloTemplate c = b;
+    c.job.ntime = b.job.ntime + 7;
+    Is(SameWork(a, c), true, "a later ntime alone is still the same job");
+
+    // And the id of the reply is not the work either.
+    SoloTemplate d = b;
+    d.longPollId = "something-else";
+    Is(SameWork(a, d), true, "a different longpollid is still the same job");
+
+    // Everything that reaches the header or the body is new work.
+    SoloTemplate e = b; e.prevHashHex = std::string(64, 'a');
+    Is(SameWork(a, e), false, "a new chain tip is new work");
+
+    SoloTemplate f = b; f.job.height += 1;
+    Is(SameWork(a, f), false, "a new height is new work");
+
+    SoloTemplate g = b; g.job.nbits ^= 1u;
+    Is(SameWork(a, g), false, "new nbits is new work");
+
+    SoloTemplate h = b; h.job.version ^= 1u;
+    Is(SameWork(a, h), false, "a new version is new work");
+
+    SoloTemplate i = b; i.job.seed.push_back(0x01);
+    Is(SameWork(a, i), false, "a new RandomX key is new work");
+
+    SoloTemplate j = b; j.job.coinb2.push_back(0x01);
+    Is(SameWork(a, j), false, "a changed coinbase is new work");
+
+    SoloTemplate k = b; k.job.merkleBranch.push_back({});
+    Is(SameWork(a, k), false, "a changed merkle branch is new work");
+
+    SoloTemplate l = b; l.txs.push_back(TemplateTx{});
+    Is(SameWork(a, l), false, "a changed transaction set is new work");
+}
+
+// ---------------------------------------------------------------------------
+
 int main()
 {
     std::printf("\nsolo_template_test\n");
     TestHeights();
     TestTemplate();
+    TestSameWork();
     std::printf("\n  %d checks, %d failure(s)\n\n", checks, failures);
     return failures ? 1 : 0;
 }

@@ -66,6 +66,58 @@ struct SoloTemplate {
     std::string             prevHashHex;    // as the node states it
 };
 
+/**
+ * Is this the same work, or only the same moment?
+ *
+ * A solo miner polls getblocktemplate every few seconds and the node answers
+ * every time, whether or not anything changed. Treating each answer as a new
+ * job costs a block: the job a worker is hashing goes out of scope while the
+ * worker is still on it, and the transactions it was built from are forgotten
+ * with it, so a solution that arrives later cannot be turned into a block.
+ *
+ * That is not theory. On 2026-09-26 a miner solved height 7838 ninety-nine
+ * seconds after starting, and this miner refused to send it -- "job 7838.9 is
+ * no longer held". Eight job ids had been minted in the meantime out of
+ * templates that were byte-for-byte the same work.
+ *
+ * So the comparison is of the work, not of the reply. Everything that reaches
+ * the eighty-byte header or the block body is compared:
+ *
+ *   prevHash, height   a different chain tip is different work, always
+ *   version, nbits     both go in the header
+ *   seed               the RandomX key; a new epoch is entirely new work
+ *   coinb1, coinb2     the coinbase, which carries the treasury output and
+ *                      the witness commitment
+ *   merkleBranch, txs  the body, and the merkle root over it
+ *
+ * ntime is deliberately NOT compared. The node advances it on every call, and
+ * it is the one header field a miner may hold or roll on its own: a block is
+ * valid while its ntime is above the median of the last eleven and not more
+ * than two hours ahead. Comparing it would make every single poll "new work"
+ * again, which is the bug this function exists to end.
+ *
+ * longPollId is not compared either: it identifies the reply, not the work.
+ */
+inline bool SameWork(const SoloTemplate& a, const SoloTemplate& b)
+{
+    if (a.prevHashHex   != b.prevHashHex)   return false;
+    if (a.job.height    != b.job.height)    return false;
+    if (a.job.version   != b.job.version)   return false;
+    if (a.job.nbits     != b.job.nbits)     return false;
+    if (a.job.seed      != b.job.seed)      return false;
+    if (a.job.coinb1    != b.job.coinb1)    return false;
+    if (a.job.coinb2    != b.job.coinb2)    return false;
+    if (a.job.merkleBranch.size() != b.job.merkleBranch.size()) return false;
+    for (size_t i = 0; i < a.job.merkleBranch.size(); i++) {
+        if (a.job.merkleBranch[i] != b.job.merkleBranch[i]) return false;
+    }
+    if (a.txs.size() != b.txs.size()) return false;
+    for (size_t i = 0; i < a.txs.size(); i++) {
+        if (a.txs[i].hash != b.txs[i].hash) return false;
+    }
+    return true;
+}
+
 // ---------------------------------------------------------------------------
 // small serialisation helpers
 // ---------------------------------------------------------------------------

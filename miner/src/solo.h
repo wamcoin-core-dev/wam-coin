@@ -74,17 +74,60 @@ public:
             const bool isNew = st.prevHashHex != m_current.prevHashHex ||
                                st.job.height  != m_current.job.height;
 
-            // Every template gets its own id, height alone is not enough: the
-            // node hands out a fresh one whenever the mempool moves, and two
-            // templates at the same height carry different transactions. A
-            // worker solving the older one must be given the transactions
-            // THAT job promised, which is what the ids below are for.
-            st.job.jobId = std::to_string(st.job.height) + "." +
-                           std::to_string(++m_serial);
-            {
+            // A NEW ID ONLY FOR NEW WORK, AND A JOB IS KEPT WHILE IT CAN
+            // STILL BE MINED.
+            //
+            // Two templates at the same height can carry different
+            // transactions, so a worker solving the older one must be given
+            // the transactions THAT job promised -- hence ids at all. But the
+            // node answers every poll whether or not anything moved, and
+            // minting an id per reply meant a job that no worker had finished
+            // was already being forgotten.
+            //
+            // What that cost, on 2026-09-26: a miner solved height 7838
+            // ninety-nine seconds after starting and this code refused to send
+            // the block, because the job it had been hashing was one of eight
+            // that had scrolled out of a deque bounded by COUNT. The poll is
+            // five seconds, so the memory was forty seconds; a worker holds a
+            // job until the tip moves, which is two minutes. Roughly two
+            // blocks in three were unsendable, on the feature this release was
+            // built for.
+            //
+            // So: an unchanged template keeps the id it already has and adds
+            // nothing, and what is retained is bounded by RELEVANCE instead --
+            // every job for the current tip, plus the one before it. Jobs for
+            // an older tip are dropped because they cannot be mined any more:
+            // a block on a grandparent is not a competitor, it is nothing. The
+            // previous tip is kept because a block solved against it moments
+            // after the tip moved IS a competitor at the same height, and has
+            // won races before.
+            if (m_haveTemplate && SameWork(st, m_current)) {
+                st.job.jobId = m_current.job.jobId;
+            } else {
+                st.job.jobId = std::to_string(st.job.height) + "." +
+                               std::to_string(++m_serial);
                 std::lock_guard<std::mutex> lock(m_mutex);
-                m_issued.emplace_back(st.job.jobId, st.txs);
-                while (m_issued.size() > 8) m_issued.pop_front();
+                m_issued.push_back({st.job.jobId, st.prevHashHex, st.txs});
+                if (st.prevHashHex != m_prevTipHex) {
+                    // The tip moved. What was current is now the generation
+                    // behind it, and anything older than that goes.
+                    const std::string grandparent = m_olderTipHex;
+                    m_olderTipHex = m_prevTipHex;
+                    m_prevTipHex  = st.prevHashHex;
+                    if (!grandparent.empty()) {
+                        for (auto it = m_issued.begin(); it != m_issued.end(); ) {
+                            it = (it->prevHashHex != m_prevTipHex &&
+                                  it->prevHashHex != m_olderTipHex)
+                                 ? m_issued.erase(it) : it + 1;
+                        }
+                    }
+                }
+                // A backstop, not the policy. Two generations of an idle
+                // chain is a handful of entries; this only ever fires if a
+                // mempool churns hard enough to mint thousands of templates
+                // between blocks, and it drops the oldest, which is the least
+                // likely to still be under a worker.
+                while (m_issued.size() > 4096) m_issued.pop_front();
             }
 
             m_current = std::move(st);
@@ -98,6 +141,28 @@ public:
     }
 
     bool HaveTemplate() const { return m_haveTemplate; }
+
+    /**
+     * Can a solution for this job still be turned into a block?
+     *
+     * Submit() answers this implicitly by throwing, which is the wrong moment
+     * to find out: by then the proof of work exists and is about to be
+     * discarded. Exposed so it can be asserted in a test instead of being
+     * discovered by a miner losing a block.
+     */
+    bool KnowsJob(const std::string& jobId) const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        for (const auto& e : m_issued) if (e.jobId == jobId) return true;
+        return false;
+    }
+
+    /** How many jobs are still submittable. For tests and diagnostics. */
+    size_t IssuedCount() const
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_issued.size();
+    }
     bool WasNew() const { return m_isNew; }
     const SoloTemplate& Current() const { return m_current; }
 
@@ -166,7 +231,7 @@ public:
         {
             std::lock_guard<std::mutex> lock(m_mutex);
             for (const auto& e : m_issued) {
-                if (e.first == job.jobId) { txs = e.second; known = true; break; }
+                if (e.jobId == job.jobId) { txs = e.txs; known = true; break; }
             }
         }
         if (!known) {
@@ -222,8 +287,19 @@ private:
     bool         m_isNew        = false;
 
     // Workers submit from their own threads, so the issued list is shared.
+    //
+    // The tip each job was built on is kept beside it, because what decides
+    // whether a job is still worth remembering is whether it can still become
+    // a block -- not how many templates have arrived since.
+    struct IssuedJob {
+        std::string             jobId;
+        std::string             prevHashHex;
+        std::vector<TemplateTx> txs;
+    };
     mutable std::mutex m_mutex;
-    std::deque<std::pair<std::string, std::vector<TemplateTx>>> m_issued;
+    std::deque<IssuedJob> m_issued;
+    std::string m_prevTipHex;    // tip the newest job was built on
+    std::string m_olderTipHex;   // the one before it, still submittable
     uint64_t m_serial = 0;
 };
 
