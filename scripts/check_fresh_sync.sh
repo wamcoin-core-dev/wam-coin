@@ -53,7 +53,29 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NETWORK="mainnet"
 PEER=""
 BINARY=""
-WAIT=240
+
+# A BUDGET THAT GROWS WITH THE CHAIN, BECAUSE THE WORK DOES.
+#
+# This was a flat number, and on 2026-09-26 a fresh node reached the tip in
+# 273 seconds against a limit of 300 -- twenty-seven seconds of margin, on a
+# chain that adds 720 blocks a day. The check was days away from failing
+# every run for no reason but arithmetic, and a red that arrives on a healthy
+# system is how an operator learns to stop reading red.
+#
+# Syncing this chain is RandomX verification and nothing else, so the cost is
+# very nearly linear in blocks. What is worth watching is therefore not the
+# clock but the RATE: a node that verifies fewer than MIN_RATE blocks a
+# second has genuinely got slower, and that is a regression worth a red. The
+# budget below is that rate with room for a slow disk and a slow peer, plus a
+# fixed allowance for starting up and finding a peer at all.
+#
+# Measured on 2026-09-26: 7,911 blocks in 273 s -- 29 blocks a second, on a
+# 4-core VPS. MIN_RATE is set at a third of that, so the check fires when a
+# machine is three times slower than the one it was measured on, not when the
+# chain is merely longer than it was.
+MIN_RATE="${WAM_SYNC_MIN_RATE:-10}"   # blocks per second
+START_ALLOWANCE=120                   # start, connect, find a peer
+WAIT=""                               # computed from the peer's height below
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -81,7 +103,12 @@ done
 # true rather than assumed.
 RUNHOST="${RUNHOST:-}"
 if [ -n "$RUNHOST" ]; then
-    REMOTE="cd /opt/wam && bash scripts/check_fresh_sync.sh --network '$NETWORK' --timeout '$WAIT'"
+    # Only pass --timeout onward if one was actually given. Passing an empty
+    # string would make the far side parse "" as the value and wait no time
+    # at all, and it would also throw away the far side's own budget, which
+    # it computes from the chain it can see.
+    REMOTE="cd /opt/wam && bash scripts/check_fresh_sync.sh --network '$NETWORK'"
+    [ -n "$WAIT" ] && REMOTE="$REMOTE --timeout '$WAIT'"
     # Only when one was given: an empty --peer would be rejected by the copy
     # at the other end, and the failure would read as a network fault.
     [ -n "$PEER" ] && REMOTE="$REMOTE --peer '$PEER'"
@@ -201,12 +228,47 @@ ELAPSED=0
 # printed "10s" against its last reading. So the number in the report was
 # invented, and --timeout bounded nothing.
 START=$(date +%s)
+
+# THE BUDGET IS SET WHEN THE PEER IS KNOWN, NOT BEFORE.
+#
+# The first version of this asked getpeerinfo here, seconds after the node
+# started. There is no peer yet at that moment, so the height came back empty,
+# the budget became the start allowance alone, and a healthy node was failed
+# at block 0 for being given two minutes to do four minutes of work.
+#
+# So the deadline starts as the allowance -- the right limit for "could not
+# even find a peer" -- and is extended once, in the loop, the moment the
+# peer's height is learned. --timeout still wins outright if it was given,
+# because a caller who names a number means it.
+BUDGET_SET=0
+if [ -n "$WAIT" ]; then BUDGET_SET=1; else WAIT="$START_ALLOWANCE"; fi
+
+# A newline as a value, not as an escape.
+#
+# Twice today a backslash-n written into a file from a tool became a real
+# line break on the way, splitting a printf format across two lines. The
+# script still ran and still printed, so nothing failed loudly -- which is
+# the worst kind. Held as a variable it cannot be mangled by whatever writes
+# this file next.
+NL='
+'
+
 DEADLINE=$((START + WAIT))
 printf '  %-8s %-8s %-8s %s\n' "elapsed" "blocks" "headers" "peer height"
 while [ "$(date +%s)" -lt "$DEADLINE" ]; do
     H="$(ask getblockcount)"
     HDR="$(ask getblockchaininfo | grep -oE '"headers": [0-9]+' | grep -oE '[0-9]+')"
     [ -z "$TARGET" ] && TARGET="$(ask getpeerinfo | grep -oE '"startingheight": [0-9]+' | grep -oE '[0-9]+' | head -1)"
+    # Now that the chain's length is known, give it time proportional to the
+    # work: MIN_RATE blocks a second on top of the allowance already spent
+    # finding the peer. Once only.
+    if [ "$BUDGET_SET" -eq 0 ] && [ -n "$TARGET" ] && [ "$TARGET" -gt 0 ] 2>/dev/null; then
+        BUDGET_SET=1
+        WAIT=$(( START_ALLOWANCE + TARGET / MIN_RATE ))
+        DEADLINE=$((START + WAIT))
+        printf '  budget    %ss: %s block(s) at %s/s, plus %ss to start%s' \
+            "$WAIT" "$TARGET" "$MIN_RATE" "$START_ALLOWANCE" "$NL"
+    fi
 
     ELAPSED=$(( $(date +%s) - START ))
     printf '  %-8s %-8s %-8s %s\n' "${ELAPSED}s" "${H:-?}" "${HDR:-?}" "${TARGET:-?}"
