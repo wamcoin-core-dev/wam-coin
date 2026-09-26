@@ -114,6 +114,32 @@ UI_STRING = re.compile(r'(<string[^>]*>)([^<]*)(</string>)')
 TR_CALL = re.compile(r'(\btr\(\s*")((?:[^"\\]|\\.)*)(")')
 NOOP_CALL = re.compile(r'(QT_TRANSLATE_NOOP\(\s*"[^"]*"\s*,\s*")((?:[^"\\]|\\.)*)(")')
 
+# THE TRANSLATIONS, WHICH ARE 123 FILES AND WERE SAYING BITCOIN IN ALL OF THEM.
+#
+# The English was rebranded from the first week. The catalogues under
+# src/qt/locale were not, and every one of them ships inside the wallet. In
+# Spanish -- the language of a man who has been running a node for this chain
+# since August -- the first Windows build said:
+#
+#     Ingresa una dirección de Bitcoin (p. ej., %1)
+#     Estas son tus direcciones de Bitcoin para enviar pagos
+#
+# So anybody whose system is not English saw another coin's name on every
+# screen, and none of the checks could see it because they all read English.
+#
+# Both halves of each entry are rewritten, and that is deliberate. <source> is
+# the LOOKUP KEY: Qt matches it against the literal in the C++, and the C++ has
+# already been rebranded here. Rewriting the translation alone would leave the
+# key spelling "Bitcoin", the lookup would miss, and every rebranded string
+# would silently fall back to English -- a translation file that exists and
+# does nothing. The same table is applied to both, so the two stay in step.
+#
+# <name> is untouched on purpose: those are C++ class names (BitcoinGUI,
+# BitcoinAmountField), not words anybody reads.
+TS_SOURCE = re.compile(r'(<source>)([^<]*)(</source>)')
+TS_TRANSLATION = re.compile(r'(<translation[^>]*>)([^<]*)(</translation>)')
+TS_NUMERUS = re.compile(r'(<numerusform>)([^<]*)(</numerusform>)')
+
 
 def rewrite(text: str) -> str:
     for old, new in PHRASES:
@@ -135,6 +161,19 @@ def process_source(path: Path) -> int:
     changed = original
     for pattern in (TR_CALL, NOOP_CALL):
         changed = pattern.sub(lambda m: m.group(1) + rewrite(m.group(2)) + m.group(3), changed)
+    if changed == original:
+        return 0
+    path.write_text(changed, encoding='utf-8')
+    return 1
+
+
+def process_ts(path: Path) -> int:
+    """One translation catalogue: the key and the translation, together."""
+    original = path.read_text(encoding='utf-8')
+    changed = original
+    for pattern in (TS_SOURCE, TS_TRANSLATION, TS_NUMERUS):
+        changed = pattern.sub(
+            lambda m: m.group(1) + rewrite(m.group(2)) + m.group(3), changed)
     if changed == original:
         return 0
     path.write_text(changed, encoding='utf-8')
@@ -183,6 +222,17 @@ def main() -> int:
         if process_source(path):
             touched += 1
             print(f'  source  {path.name}')
+
+    # The catalogues. 123 of them ship inside the wallet, and until 2026-09-26
+    # every one of them said Bitcoin -- see the comment on TS_SOURCE.
+    locales = sorted((qt / 'locale').glob('*.ts'))
+    changed_locales = 0
+    for path in locales:
+        if process_ts(path):
+            changed_locales += 1
+    if changed_locales:
+        touched += changed_locales
+        print(f'  locale  {changed_locales} of {len(locales)} translation file(s)')
 
     for rel, old, new in SCHEME_EDITS:
         path = tree / rel
