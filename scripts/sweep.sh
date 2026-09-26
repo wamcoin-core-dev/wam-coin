@@ -189,6 +189,10 @@ run "no alert looks like a link" "$PY" scripts/test/test_alert_text.py
 # run -- on Linux. This exercises all three, needing none of them.
 run "each platform note is true of it" bash scripts/test/test_release_note.sh
 run "embedded python parses"     bash scripts/test/test_embedded_python.sh
+    # The wallet's own words. Added after the first GUI build answered
+    # `help validateaddress` with "the given bitcoin address" -- in a window
+    # one menu away from the balance.
+    run "the wallet says WAM to a person" "$PY" scripts/test/test_rename_messages.py
 # A comment after a "\" continuation commented out the command it was meant to
 # explain, in this very file, and the harness reported the missing command as
 # a pass. See the header of the test.

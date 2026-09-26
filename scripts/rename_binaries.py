@@ -182,6 +182,27 @@ MESSAGE_FILES = [
     'src/wallet/rpc/backup.cpp',
     'src/wallet/rpc/wallet.cpp',
     'src/wallet/external_signer_scriptpubkeyman.cpp',
+
+    # THE RPC HELP, WHICH IS READ BY PEOPLE AND NOT ONLY BY PROGRAMS.
+    #
+    # Added 2026-09-26, after the first graphical wallet was built and its
+    # debug console -- Help, Debug window, Console -- answered `help
+    # validateaddress` with "Return information about the given bitcoin
+    # address". Every one of these strings is a description or an error
+    # message: argument NAMES are untouched, because a renamed argument
+    # breaks every client that ever sent one.
+    'src/common/signmessage.cpp',
+    'src/rpc/mining.cpp',
+    'src/rpc/output_script.cpp',
+    'src/rpc/rawtransaction.cpp',
+    'src/rpc/rawtransaction_util.cpp',
+    'src/rpc/signmessage.cpp',
+    'src/wallet/rpc/addresses.cpp',
+    'src/wallet/rpc/coins.cpp',
+    'src/wallet/rpc/encrypt.cpp',
+    'src/wallet/rpc/signmessage.cpp',
+    'src/wallet/rpc/spend.cpp',
+    'src/wallet/rpc/transactions.cpp',
 ]
 
 # A quoted C++ string literal, escapes included.
@@ -218,6 +239,23 @@ def rename_message_strings(text):
             return s
         s = s.replace('bitcoin-cli', 'wam-cli')
         s = re.sub(r'\bbitcoind\b', 'wamd', s)
+
+        # THE COIN'S NAME IN PROSE, NOT ONLY THE PROGRAM'S.
+        #
+        # "The Bitcoin address", "the bitcoin address to receive", "you will
+        # receive less bitcoins than you enter", "the newly generated bitcoin
+        # to". Every one of those is what a person reads in the wallet's debug
+        # console or in `wam-cli help`, and every one of them names another
+        # coin while describing this one's money.
+        #
+        # Still only inside quoted literals, and still behind _LEAVE_ALONE, so
+        # an #include or a makefile variable cannot be caught by it. The word
+        # boundaries matter: `bitcoins` must not turn `bitcoinsomething` into
+        # anything, and a bare `bitcoin` is only rewritten where it is plainly
+        # the money -- before " to " or " address".
+        s = re.sub(r'\b[Bb]itcoin address\b', 'WAM address', s)
+        s = re.sub(r'\b[Bb]itcoins\b', 'WAM', s)
+        s = re.sub(r'\bbitcoin\b(?= to\b)', 'WAM', s)
         return s
 
     return _LITERAL.sub(fix, text)
