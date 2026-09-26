@@ -196,6 +196,22 @@ log "     renaming binaries to wamd / wam-cli / wam-tx / wam-util / wam-wallet"
 # upstream name survived, so a partial rename cannot pass silently.
 "$PY" "$REPO_ROOT/scripts/rename_binaries.py" --tree "$CORE_DIR" --check
 
+# ---------------------------------------------------------------------------
+# The GUI's own words, for EVERY tree and not only the one build_qt.sh makes.
+#
+# rebrand_qt.py was called from build_qt.sh alone, which is the Linux path. So
+# the Windows cross-build produced a wallet whose first window told the
+# founder, on 2026-09-26, that it would download "the full Bitcoin block chain
+# (4 GB) starting with the earliest transactions in 2009". The Linux wallet
+# said WAM in the same place, from the same commit, because a different script
+# happened to run one more step.
+#
+# The tree is the WAM tree from the moment it is patched. Its GUI text belongs
+# to that, not to whichever build script comes next, so it runs here -- once,
+# for all three platforms. build_qt.sh still calls it and that is harmless:
+# the script is idempotent by design and says "already rebranded".
+"$PY" "$REPO_ROOT/scripts/rebrand_qt.py" --tree "$CORE_DIR" | sed 's/^/  /'
+
 cat > "$CORE_DIR/.wam-patched" <<EOF
 upstream_repo=$UPSTREAM_REPO
 upstream_tag=$UPSTREAM_TAG

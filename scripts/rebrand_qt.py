@@ -77,6 +77,27 @@ SCHEME_EDITS = [
     ('src/qt/paymentserver.cpp',
      'const QString BITCOIN_IPC_PREFIX("bitcoin:");',
      'const QString BITCOIN_IPC_PREFIX("wam:");'),
+
+    # THE FIRST WINDOW A NEW USER EVER SEES, AND IT DESCRIBED ANOTHER CHAIN.
+    #
+    # The founder opened the first Windows build on 2026-09-26 and the welcome
+    # dialog told him the program would download "the full Bitcoin block chain
+    # (4 GB) starting with the earliest transactions in 2009", and warned that
+    # the sync "is very demanding and may expose hardware problems". WAM's
+    # chain is about five megabytes and eleven days old, and syncs in four
+    # minutes.
+    #
+    # The chain's name is handled by the phrase table above. These two are
+    # not text substitutions: the year is a number in the source, and the
+    # warning is simply false here -- a sentence written for a 600 GB chain,
+    # frightening people away from a download smaller than a photograph.
+    ('src/qt/intro.cpp', '.arg(2009)', '.arg(2026)'),
+    ('src/qt/forms/intro.ui',
+     'This initial synchronisation is very demanding, and may expose hardware '
+     'problems with your computer that had previously gone unnoticed. Each '
+     'time you run %1, it will continue downloading where it left off.',
+     'The whole chain is small and takes a few minutes on an ordinary '
+     'machine. Each time you run %1, it continues where it left off.'),
 ]
 
 # The content class is [^<]*, not .*?, and that is the whole safety argument.

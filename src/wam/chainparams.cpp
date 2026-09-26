@@ -425,8 +425,21 @@ public:
         nDefaultPort = WAM_MAINNET_P2P_PORT; // 9555
 
         nPruneAfterHeight = 100000;
-        m_assumed_blockchain_size = 4;
-        m_assumed_chain_state_size = 1;
+        // WAM: what the first-run window promises a newcomer it will use.
+        //
+        // These two are added together and shown in the welcome dialog as
+        // "At least N GB of data will be stored in this directory". They said
+        // 4 and 1, so a person opening the wallet for the first time was told
+        // to set aside five gigabytes -- for a chain that was five MEGAbytes
+        // on 2026-09-26, eleven days after genesis, and grows by roughly half
+        // a megabyte a day.
+        //
+        // 1 and 0 is honest and still generous: at the current rate the chain
+        // reaches a gigabyte somewhere past its fifth year. Zero for both
+        // would render as "At least 0 GB", which reads as a broken dialog
+        // rather than as a small chain.
+        m_assumed_blockchain_size = 1;
+        m_assumed_chain_state_size = 0;
 
         // -------------------------------------------------------------------
         // Genesis
