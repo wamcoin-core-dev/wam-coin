@@ -58,6 +58,13 @@ PHRASES = [
     ('spend bitcoins', 'spend WAM'),
     ('bitcoins', 'WAM'),
     ('Bitcoins', 'WAM'),
+    # Shouting, which translators do in warnings. The Spanish wallet's
+    # encrypt-wallet notice said "PERDERÁS TODOS TUS BITCOINS" -- and it
+    # survived the first pass, because the table knew two capitalisations and
+    # not the third. Found by reading the compiled catalogue rather than the
+    # source, which is the only place it shows.
+    ('BITCOINS', 'WAM'),
+    ('BITCOIN', 'WAM'),
     ('Bitcoin', 'WAM'),
     # Last, and only ever inside a <string> element or a tr() call, so it can
     # never reach bitcoin.qrc, :/icons/bitcoin, or the BitcoinAmountField class.
