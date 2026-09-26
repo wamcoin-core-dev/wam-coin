@@ -38,8 +38,31 @@ echo "=================================================================="
 echo " Building wam-qt"
 echo "=================================================================="
 
-[ -f "$TREE/configure" ] || fail "no configure script in $TREE"
+[ -d "$TREE" ] || fail "no tree at $TREE -- run scripts/fetch-upstream.sh first"
+[ -f "$TREE/configure.ac" ] || fail "$TREE is not a Bitcoin Core tree (no configure.ac)"
 ok "tree              $TREE"
+
+# A FRESH TREE HAS NO configure AT ALL, AND THAT IS THE NORMAL CASE.
+#
+# This required one to exist and failed with "no configure script" otherwise.
+# That held for as long as this was only ever run after install.sh had already
+# configured the tree once -- and it broke the first time the GUI was built
+# the way a release must build it: from fetch-upstream.sh and nothing else, on
+# a machine with no previous build on it.
+#
+# The regeneration below already knew how to run autogen.sh; it just would not
+# reach it. So the absence of configure is now a reason to generate it rather
+# than a reason to stop.
+if [ ! -f "$TREE/configure" ]; then
+    command -v autoconf >/dev/null 2>&1 \
+        || fail "this tree has never been configured and autoconf is missing:
+     sudo apt-get install -y autoconf automake libtool pkg-config"
+    echo
+    echo "  no configure script yet; generating it..."
+    ( cd "$TREE" && ./autogen.sh ) > /tmp/wam_qt_autogen.log 2>&1 \
+        || { tail -20 /tmp/wam_qt_autogen.log; fail "autogen.sh failed"; }
+    ok "generated         configure"
+fi
 
 command -v qmake >/dev/null 2>&1 \
     || fail "qmake not found. Install the Qt development packages first:
