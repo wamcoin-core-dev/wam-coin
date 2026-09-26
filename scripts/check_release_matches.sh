@@ -98,12 +98,25 @@ for a in "${WANT_ADDR[@]}"; do printf '    address  %s\n' "$a"; done
 # ---------------------------------------------------------------------------
 printf '\n%sthe published release%s\n' "$BLD" "$OFF"
 
-API="$(curl -sSL -m 40 "https://api.github.com/repos/$REPO/releases?per_page=10" 2>/dev/null)"
-if [ -z "$API" ]; then
-    bad "could not reach the GitHub API -- the published artifact was NOT checked"
+# THE DOWNLOADS INDEX, NOT THE GITHUB API.
+#
+# This asked api.github.com and the sweep of 2026-09-26 reported "could not
+# check" -- sixty unauthenticated calls an hour is the whole budget and a
+# sweep spends them. The one check that asks whether the published download
+# is this network was being silenced by somebody else's quota.
+#
+# Every page and every post sends people to wamcoin.org for the downloads,
+# which is served from machines this project owns. That is what is examined,
+# because that is what is fetched.
+DOWNLOADS="https://wamcoin.org/downloads"
+INDEX="$(curl -sSL -m 40 "$DOWNLOADS/" 2>/dev/null)"
+if [ -z "$INDEX" ]; then
+    bad "could not reach $DOWNLOADS -- the published artifact was NOT checked"
     echo; echo "=================================================================="
     exit 1
 fi
+NEWEST="$(printf '%s' "$INDEX" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | sort -V -u | tail -1)"
+VERINDEX="$(curl -sSL -m 40 "$DOWNLOADS/$NEWEST/" 2>/dev/null)"
 
 # Every published wam-coin archive, not the first one alphabetically.
 #
@@ -118,35 +131,29 @@ fi
 # The order is deliberate: linux, then windows, then macOS, so that a link
 # which dies halfway has already answered the question for the platform the
 # servers run.
-mapfile -t ASSETS < <(printf '%s' "$API" | "$PY" -c "
-import sys; sys.stdout.reconfigure(newline='\n')  # no \r on Windows
-import json, sys
-try:
-    rs = json.load(sys.stdin)
-except Exception:
-    sys.exit()
-if isinstance(rs, dict) or not rs:
-    sys.exit()
+# The order is deliberate: linux, then windows, then macOS, so that a link
+# which dies halfway has already answered the question for the platform the
+# servers run.
+# Exported, because the reader below runs in a process substitution and a
+# prefix assignment does not reach a builtin's subshell.
+export NEWEST DOWNLOADS
+mapfile -t ASSETS < <(printf '%s' "$VERINDEX" | "$PY" -c "
+import sys; sys.stdout.reconfigure(newline=chr(10))  # never a CR, on any platform
+import re, sys, os
+ver  = os.environ.get('NEWEST', '')
+base = os.environ.get('DOWNLOADS', '') + '/' + ver
+names = re.findall(r'href=\"([^\"/]+)\"', sys.stdin.read())
 def rank(n):
     for i, k in enumerate(('linux', 'mingw', 'w64', 'darwin')):
         if k in n:
             return i
     return 9
-for r in rs:
-    if r.get('draft'):
-        continue
-    out = []
-    for a in r.get('assets', []):
-        n = a.get('name', '')
-        if n.startswith('wam-coin') and (n.endswith('.tar.gz') or n.endswith('.zip')):
-            out.append((rank(n), n, a.get('browser_download_url'),
-                        r.get('tag_name'), a.get('size') or 0))
-    if out:
-        # The size is carried out so the shell can tell a download that
-        # arrived from a download that merely returned. See check_artifact.
-        for _, n, u, t, sz in sorted(out):
-            print(t, n, u, sz)
-        sys.exit()
+out = [n for n in names
+       if n.startswith('wam-coin') and (n.endswith('.tar.gz') or n.endswith('.zip'))]
+# The size is not known from an index, and 0 means 'ask the transfer', which
+# is what check_artifact already does when it is not told one.
+for n in sorted(set(out), key=rank):
+    print(ver, n, base + '/' + n, 0)
 " 2>/dev/null)
 
 if [ "${#ASSETS[@]}" -eq 0 ]; then

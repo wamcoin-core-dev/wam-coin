@@ -54,30 +54,39 @@ else
     bad "this script and SECURITY.md name different fingerprints"
 fi
 
+# WHERE THE DOWNLOADS ARE, WHICH IS NOT GITHUB ANY MORE.
+#
+# This asked api.github.com, and on 2026-09-26 the sweep reported "could not
+# check" twice: sixty unauthenticated calls an hour is the whole budget, and
+# a sweep spends them. So the one check that proves a stranger can verify our
+# release was silenced by somebody else's rate limit.
+#
+# Every post, every page and CHANNELS.txt send people to wamcoin.org for the
+# downloads. That is served from machines this project owns, it has no rate
+# limit, and it is where the person this check speaks for will actually go.
+# GitHub is one of three mirrors of the SOURCE; it is not where a wallet is
+# fetched from, and a check must ask the place the reader will go.
+DOWNLOADS="https://wamcoin.org/downloads"
+
 TAG="${1:-}"
-if [ -n "$TAG" ]; then
-    json="$(curl -sS --max-time 25 "https://api.github.com/repos/$REPO/releases/tags/$TAG" 2>/dev/null)"
-else
-    # NOT /releases/latest. That endpoint silently skips anything marked as a
-    # pre-release or a draft, and v0.1.6 is exactly that -- so this check
-    # reported "no release published" about a release that was published, with
-    # an unsigned SHA256SUMS sitting on it. An endpoint that hides the thing
-    # you are checking for is worse than one that errors.
-    json="$(curl -sS --max-time 25 "https://api.github.com/repos/$REPO/releases?per_page=1" 2>/dev/null \
-            | sed -n '/^\[/,$p' | sed '1s/^\[//' | sed '$s/\]$//')"
+if [ -z "$TAG" ]; then
+    # sort -V, or v0.1.9 wins over v0.1.10 in every other order.
+    TAG="$(curl -sS --max-time 25 "$DOWNLOADS/" 2>/dev/null \
+           | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | sort -V -u | tail -1)"
 fi
 
-if [ -z "$json" ] || printf '%s' "$json" | grep -q '"message": *"Not Found"'; then
-    warn "GitHub did not return a release (rate limit, or none published yet)"
-    echo; exit 2
-fi
-if printf '%s' "$json" | grep -q '"message": *"API rate limit'; then
-    warn "GitHub rate limit reached from this address -- try again in an hour"
+if [ -z "$TAG" ]; then
+    warn "wamcoin.org/downloads did not list any version"
     echo; exit 2
 fi
 
-tag="$(printf '%s' "$json" | grep -m1 '"tag_name"' | cut -d'"' -f4)"
-names="$(printf '%s' "$json" | grep '"name"' | cut -d'"' -f4)"
+tag="$TAG"
+index="$(curl -sS --max-time 25 "$DOWNLOADS/$tag/" 2>/dev/null)"
+if [ -z "$index" ]; then
+    warn "wamcoin.org/downloads/$tag/ did not answer"
+    echo; exit 2
+fi
+names="$(printf '%s' "$index" | grep -oE 'href="[^"]+"' | cut -d'"' -f2)"
 echo "  release: $tag"
 
 for want in SHA256SUMS SHA256SUMS.asc; do
@@ -91,7 +100,7 @@ done
 
 T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
-base="https://github.com/$REPO/releases/download/$tag"
+base="$DOWNLOADS/$tag"
 curl -sSL --max-time 40 -o "$T/SHA256SUMS"     "$base/SHA256SUMS"
 curl -sSL --max-time 40 -o "$T/SHA256SUMS.asc" "$base/SHA256SUMS.asc"
 
