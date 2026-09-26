@@ -175,16 +175,30 @@ mkdir -p "$OUT"
 
 NODE_DIR="$WORK/stage/wam-coin-$VERSION/bin"
 MINER_DIR="$WORK/stage/wam-miner-$VERSION"
+
+# THE GRAPHICAL WALLET SHIPS ON ITS OWN, AND THE REASON IS THE SIZE.
+#
+# wam-qt is about 20 MB stripped, against roughly 5 MB for the whole node
+# package. Putting it in bin/ beside wamd -- which is what this script used to
+# do -- makes every person who wants a node, a seed or a miner download four
+# times as much for a window they will never open. The founder asked for it in
+# a file of its own before v0.1.10 and it is the first thing he checked when
+# the wallet was finally built.
+WALLET_DIR="$WORK/stage/wam-qt-$VERSION"
 mkdir -p "$NODE_DIR" "$MINER_DIR"
 
 for b in "${NODE_BINS[@]}"; do
     cp "$TREE/src/$b" "$NODE_DIR/"
 done
-[ "$HAVE_GUI" = "1" ] && cp "$TREE/src/qt/wam-qt" "$NODE_DIR/"
+if [ "$HAVE_GUI" = "1" ]; then
+    mkdir -p "$WALLET_DIR/bin"
+    cp "$TREE/src/qt/wam-qt" "$WALLET_DIR/bin/"
+fi
 cp "$MINER_OUT" "$MINER_DIR/"
 
 # Debug symbols are most of the size and none of the use. 339 MB -> ~30 MB.
 strip "$NODE_DIR"/* "$MINER_DIR"/wam-miner 2>/dev/null || true
+[ "$HAVE_GUI" = "1" ] && strip "$WALLET_DIR/bin/wam-qt" 2>/dev/null || true
 ok "stripped      symbols removed"
 
 for f in COPYING README.md WHITEPAPER.md SECURITY.md; do
@@ -192,9 +206,36 @@ for f in COPYING README.md WHITEPAPER.md SECURITY.md; do
 done
 cp "$REPO/COPYING" "$REPO/miner/README.md" "$MINER_DIR/" 2>/dev/null || true
 
+# Named in the node's own notes as a SEPARATE download, so a reader who
+# wants a window knows where to get one and a reader who does not is not
+# made to carry it.
 GUI_LINE=""
-[ "$HAVE_GUI" = "1" ] && GUI_LINE="
-  bin/wam-qt       the graphical wallet"
+if [ "$HAVE_GUI" = "1" ]; then
+    GUI_LINE="
+
+The graphical wallet is a separate download, so that a node is not four times
+larger for people who never open a window:
+  wam-qt-$VERSION-$PLATFORM.tar.gz"
+    cp "$REPO/COPYING" "$WALLET_DIR/" 2>/dev/null || true
+    cat > "$WALLET_DIR/README.txt" <<WALLETEOF
+WAM Coin graphical wallet $VERSION -- $PLATFORM
+
+  bin/wam-qt       the wallet, with a window
+
+It is the same node underneath: the wallet starts one, keeps the chain in the
+same data directory, and can be used instead of wamd, not beside it. Do not
+run both against one data directory at the same time.
+
+  ./bin/wam-qt
+
+Nothing else is needed. If you already run wamd, stop it first.
+
+Verify what you downloaded before running it:
+  sha256sum --ignore-missing -c SHA256SUMS
+  gpg --verify SHA256SUMS.asc SHA256SUMS
+The fingerprint to check it against is at https://wamcoin.org/security/
+WALLETEOF
+fi
 
 cat > "$WORK/stage/wam-coin-$VERSION/RELEASE.txt" <<EOF
 WAM Coin $VERSION -- $PLATFORM
@@ -430,11 +471,16 @@ DEPS
 
 TARBALL_NODE="wam-coin-$VERSION-$PLATFORM.tar.gz"
 TARBALL_MINER="wam-miner-$VERSION-$PLATFORM.tar.gz"
+TARBALL_WALLET="wam-qt-$VERSION-$PLATFORM.tar.gz"
 
 tar -czf "$OUT/$TARBALL_NODE"  -C "$WORK/stage" "wam-coin-$VERSION"
 tar -czf "$OUT/$TARBALL_MINER" -C "$WORK/stage" "wam-miner-$VERSION"
 ok "$TARBALL_NODE  ($(( $(stat -c%s "$OUT/$TARBALL_NODE") / 1024 / 1024 )) MB)"
 ok "$TARBALL_MINER  ($(( $(stat -c%s "$OUT/$TARBALL_MINER") / 1024 )) KB)"
+if [ "$HAVE_GUI" = "1" ]; then
+    tar -czf "$OUT/$TARBALL_WALLET" -C "$WORK/stage" "wam-qt-$VERSION"
+    ok "$TARBALL_WALLET  ($(( $(stat -c%s "$OUT/$TARBALL_WALLET") / 1024 / 1024 )) MB)"
+fi
 
 # ---------------------------------------------------------------------------
 step "4d. instructions the machine downloading this may not have"
@@ -465,7 +511,15 @@ fi
 # ---------------------------------------------------------------------------
 step "5. checksums"
 
-( cd "$OUT" && sha256sum "$TARBALL_NODE" "$TARBALL_MINER" > SHA256SUMS )
+# The wallet is listed only when it was built. A SHA256SUMS naming a file
+# that is not published is the same lie as a published file named nowhere:
+# verify_release.sh would report a missing download about a release that is
+# whole.
+if [ "$HAVE_GUI" = "1" ]; then
+    ( cd "$OUT" && sha256sum "$TARBALL_NODE" "$TARBALL_MINER" "$TARBALL_WALLET" > SHA256SUMS )
+else
+    ( cd "$OUT" && sha256sum "$TARBALL_NODE" "$TARBALL_MINER" > SHA256SUMS )
+fi
 cat "$OUT/SHA256SUMS" | sed 's/^/  /'
 
 # ---------------------------------------------------------------------------
@@ -506,9 +560,10 @@ echo
 echo "=================================================================="
 echo " Release staged in $OUT"
 echo
-echo " Publish all four together:"
+echo " Publish them together:"
 echo "   $TARBALL_NODE"
 echo "   $TARBALL_MINER"
+[ "$HAVE_GUI" = "1" ] && echo "   $TARBALL_WALLET"
 echo "   SHA256SUMS"
 echo "   SHA256SUMS.asc     <- without this the other three prove nothing"
 echo
