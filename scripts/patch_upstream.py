@@ -264,6 +264,42 @@ REPLACEMENT_WAM024 = (
 )
 
 
+# WAM-026 anchors. Kept out of the Change so the C++ reads as C++, the same
+# reason as WAM-023 and WAM-024 above.
+ANCHOR_WAM026 = """    std::string addr;
+    switch (params.GetChainType()) {
+    case ChainType::MAIN:
+        addr = "bc1p35yvjel7srp783ztf8v6jdra7dhfzk5jaun8xz2qp6ws7z80n4tq2jku9f";
+        break;
+    case ChainType::SIGNET:
+    case ChainType::TESTNET:
+    case ChainType::TESTNET4:
+        addr = "tb1p35yvjel7srp783ztf8v6jdra7dhfzk5jaun8xz2qp6ws7z80n4tqa6qnlg";
+        break;
+    case ChainType::REGTEST:
+        addr = "bcrt1p35yvjel7srp783ztf8v6jdra7dhfzk5jaun8xz2qp6ws7z80n4tqsr2427";
+        break;
+    } // no default case, so the compiler can warn about missing cases"""
+
+REPLACEMENT_WAM026 = """    // WAM: the example address must be this chain's, not Bitcoin's.
+    //
+    // Upstream hardcodes bc1p... / tb1p... / bcrt1p... here, and the Pay To
+    // field then reads "Enter a WAM address (e.g. bc1p35yvjel...)" -- a
+    // Bitcoin mainnet address offered as the example of a WAM one, in the one
+    // field where a person is about to type where their money goes. It was
+    // found by opening the first wallet this project ever built and reading
+    // the screen, on 2026-09-26.
+    //
+    // The human-readable part now comes from the chain parameters, so every
+    // network is right with no list to maintain: wam1p... on mainnet,
+    // twam1p... on testnet, wamrt1p... on regtest. The data part is
+    // upstream's, unchanged, which keeps the property the check below relies
+    // on -- a bech32m checksum covers the prefix, so this string is valid on
+    // no chain at all and cannot be paid to by accident.
+    std::string addr = params.Bech32HRP() +
+        "1p35yvjel7srp783ztf8v6jdra7dhfzk5jaun8xz2qp6ws7z80n4tq2jku9f";"""
+
+
 def build_changes() -> list[Change]:
     changes: list[Change] = []
 
@@ -1690,6 +1726,45 @@ def build_changes() -> list[Change]:
                 marker="WAM: say where the old data directory is",
                 insert_after=ANCHOR_WAM025,
                 insert_text=INSERT_WAM025,
+            ),
+        ],
+    ))
+
+    # -----------------------------------------------------------------------
+    changes.append(Change(
+        id="WAM-026",
+        title="Show this chain's address in the field where money is sent",
+        rationale=(2 * chr(10)).join([
+            "The Pay To field's placeholder is the only example address a "
+            "person is ever shown, and it sits in front of the empty box that "
+            "decides where their money goes. Upstream hardcodes three Bitcoin "
+            "strings for it -- bc1p... on mainnet -- so a WAM wallet read "
+            "'Enter a WAM address (e.g. bc1p35yvjel...)'. Nobody had seen it "
+            "because nobody had built the GUI: every release so far is "
+            "--without-gui, and that string is not reachable from the node.",
+
+            "It is not a safety hole. The checksum makes it invalid on every "
+            "chain, which is upstream's own reason for hardcoding an invalid "
+            "one. It is this project's name on a screen telling a stranger "
+            "that another coin's address is what ours looks like. The founder "
+            "saw it in the first screenshot of the wallet and asked for it in "
+            "one line: it shows the identity.",
+
+            "The prefix now comes from the chain parameters and the data part "
+            "is upstream's, unchanged. Mainnet, testnet and regtest are each "
+            "right with no table to keep in step, and the string is still "
+            "valid nowhere.",
+
+            "Not consensus. It changes no block, no rule, and no address that "
+            "is ever spent to.",
+        ]),
+        edits=[
+            Edit(
+                file="src/qt/guiutil.cpp",
+                description="the example address follows this chain's prefix",
+                marker="WAM: the example address must be this chain's",
+                anchor=ANCHOR_WAM026,
+                replacement=REPLACEMENT_WAM026,
             ),
         ],
     ))
