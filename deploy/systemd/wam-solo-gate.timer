@@ -1,0 +1,30 @@
+# ===========================================================================
+#  Once a day, and once soon after a reboot.
+#
+#  Daily is the right cadence because what it guards changes only when the
+#  installed binaries change, and those change at a release. A day is also
+#  the most a regression may live before we -- rather than a miner -- find
+#  it, which is the whole bargain being made here.
+#
+#  Persistent=true, unlike the peer watch. That one compares against a world
+#  that has moved on, so a late run is worthless. This one asks a question
+#  about the binaries on this disk, and the answer is just as true an hour
+#  late as it was on time.
+#
+#  04:40 UTC, off the hour and off the backups at 03:20, because two jobs
+#  starting together on a small machine is how one of them gets blamed for
+#  the other's load.
+# ===========================================================================
+[Unit]
+Description=Daily proof that the installed miner delivers the blocks it solves
+
+[Timer]
+OnBootSec=20min
+OnCalendar=*-*-* 04:40:00
+RandomizedDelaySec=5min
+AccuracySec=1min
+Persistent=true
+Unit=wam-solo-gate.service
+
+[Install]
+WantedBy=timers.target

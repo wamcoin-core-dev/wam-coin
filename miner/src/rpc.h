@@ -46,6 +46,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "json.h"
 #include "platform.h"
@@ -81,65 +82,95 @@ inline std::string Base64(const std::string& in)
 }
 
 /**
- * Where wamd keeps its cookie, when nobody says otherwise.
+ * Every datadir a wamd on this machine could be using, best guess first.
  *
  * bitcoin-cli finds the cookie without being told, and a miner on the same
  * machine as its node should not be harder to start than that. These are the
  * datadirs wamd itself uses, taken from its GetDefaultDataDir and not from
- * memory: the Windows and macOS ones were named Bitcoin until v0.1.10, and
- * this guessed %APPDATA%\WAM, which was wrong twice over -- the wrong name
- * and the wrong half of AppData.
+ * memory.
  *
- * If the guess is wrong the miner says which path it tried, because a wrong
- * path that names itself is a one-line fix and a wrong path that does not is
- * an evening.
+ * THE NAME CHANGED AND THE DATADIRS DID NOT.
+ *
+ * Before v0.1.10 a WAM node on Windows and macOS stored its chain in a folder
+ * called **Bitcoin** -- `rename_binaries.py` carried the Linux line and not
+ * the other two. v0.1.10 fixed the name for new datadirs and deliberately
+ * keeps an existing one where it is, so nobody's chain moves under them. The
+ * consequence is that most Windows nodes on this network today are running
+ * out of `%LOCALAPPDATA%\Bitcoin` and will be for a long time.
+ *
+ * This function looked only for WAM. So a miner on a perfectly healthy node
+ * was told
+ *
+ *     cannot read the cookie at C:\Users\x\AppData\Local\WAM\.cookie
+ *     Is the node running, and is this the right datadir?
+ *
+ * which reads as "your node is down" to somebody whose node is up. It
+ * happened to the first person who tried solo mining after v0.1.10 was
+ * announced, on 2026-09-26, and cost him the evening's start.
+ *
+ * So all of them are tried, in the order wamd itself would have used, and the
+ * error names every path that was looked at rather than one. Linux is a
+ * single entry: `~/.wam` has been correct since the first build.
  */
-inline std::string DefaultCookiePath(const std::string& network)
+inline std::vector<std::string> CookieCandidates(const std::string& network)
 {
-    std::string dir;
+    std::vector<std::string> dirs;
 #ifdef _WIN32
-    // wamd keeps an existing datadir under Roaming if it finds one, and
-    // starts new ones under Local. Same order here, same reason.
     const char* roaming = std::getenv("APPDATA");
     const char* local   = std::getenv("LOCALAPPDATA");
-    if (roaming) {
-        const std::string legacy = std::string(roaming) + "\\WAM";
-        std::ifstream probe(legacy + "\\wam.conf");
-        if (probe) dir = legacy;
-    }
-    if (dir.empty() && local)   dir = std::string(local) + "\\WAM";
-    if (dir.empty() && roaming) dir = std::string(roaming) + "\\WAM";
+    // wamd keeps an existing datadir under Roaming if it finds one, and
+    // starts new ones under Local. Same order here, same reason -- and the
+    // pre-v0.1.10 name is tried after the current one at each location, so a
+    // machine that has both prefers the one this release would create.
+    if (roaming) dirs.push_back(std::string(roaming) + "\\WAM");
+    if (local)   dirs.push_back(std::string(local)   + "\\WAM");
+    if (roaming) dirs.push_back(std::string(roaming) + "\\Bitcoin");
+    if (local)   dirs.push_back(std::string(local)   + "\\Bitcoin");
+    const char sep = '\\';
 #else
     const char* home = std::getenv("HOME");
-    if (!home) return std::string();
+    if (!home) return dirs;
 #ifdef __APPLE__
-    dir = std::string(home) + "/Library/Application Support/WAM";
+    dirs.push_back(std::string(home) + "/Library/Application Support/WAM");
+    dirs.push_back(std::string(home) + "/Library/Application Support/Bitcoin");
 #else
-    dir = std::string(home) + "/.wam";
+    dirs.push_back(std::string(home) + "/.wam");
 #endif
+    const char sep = '/';
 #endif
-    if (dir.empty()) return std::string();
 
-    const char sep =
-#ifdef _WIN32
-        '\\';
-#else
-        '/';
-#endif
     // Mainnet lives in the datadir itself; the test chains each get a
     // subdirectory, named by the daemon and not by us.
-    if (network == "testnet") dir += sep + std::string("testnet3");
-    else if (network == "regtest") dir += sep + std::string("regtest");
+    std::string sub;
+    if (network == "testnet")      sub = std::string(1, sep) + "testnet3";
+    else if (network == "regtest") sub = std::string(1, sep) + "regtest";
 
-    return dir + sep + std::string(".cookie");
+    std::vector<std::string> out;
+    out.reserve(dirs.size());
+    for (const std::string& d : dirs) out.push_back(d + sub + sep + ".cookie");
+    return out;
+}
+
+/** The first candidate that exists, or the first candidate if none do. */
+inline std::string DefaultCookiePath(const std::string& network)
+{
+    const std::vector<std::string> c = CookieCandidates(network);
+    if (c.empty()) return std::string();
+    for (const std::string& p : c) {
+        std::ifstream probe(p, std::ios::binary);
+        if (probe) return p;
+    }
+    return c.front();
 }
 
 class RpcClient {
 public:
     RpcClient(std::string host, int port, std::string user,
-              std::string password, std::string cookiePath)
+              std::string password, std::string cookiePath,
+              std::string network = "mainnet")
         : m_host(std::move(host)), m_port(port), m_user(std::move(user)),
-          m_pass(std::move(password)), m_cookie(std::move(cookiePath)) {}
+          m_pass(std::move(password)), m_cookie(std::move(cookiePath)),
+          m_network(std::move(network)) {}
 
     /**
      * One call. Returns the `result` member, or throws with what the node
@@ -203,9 +234,20 @@ private:
         }
         std::ifstream f(m_cookie, std::ios::binary);
         if (!f) {
-            throw std::runtime_error("cannot read the cookie at " + m_cookie +
-                                     ". Is the node running, and is this the "
-                                     "right datadir?");
+            // Name every path that was looked at. One path in the message
+            // reads as "your node is down" to somebody whose node is up in a
+            // folder this miner did not think to open -- which is the whole
+            // Windows population that started before v0.1.10.
+            std::string tried;
+            for (const std::string& p : CookieCandidates(m_network)) {
+                tried += "\n    " + p;
+            }
+            throw std::runtime_error(
+                "cannot read the cookie at " + m_cookie +
+                ". Is the node running, and is this the right datadir?"
+                "\n  Looked in:" + (tried.empty() ? std::string("\n    (nowhere: no HOME or APPDATA)") : tried) +
+                "\n  Pass --rpccookie with the path to your node's .cookie if "
+                "it is somewhere else.");
         }
         std::string line;
         std::getline(f, line);
@@ -320,6 +362,7 @@ private:
     std::string m_user;
     std::string m_pass;
     std::string m_cookie;
+    std::string m_network;      // only so a failure can name where it looked
 };
 
 }   // namespace wam

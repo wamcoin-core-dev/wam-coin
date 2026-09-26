@@ -119,6 +119,22 @@ struct SharedState {
     std::atomic<uint64_t> rejected{0};
     std::atomic<uint64_t> blocksFound{0};
 
+    // A BLOCK THE NODE REFUSED AND A BLOCK WE NEVER MANAGED TO SEND ARE NOT
+    // THE SAME EVENT, AND WERE COUNTED AS ONE.
+    //
+    // `rejected` means the node looked at a block and said no -- a reason
+    // exists, in its words, and the bytes are written to a file. Failing to
+    // build or deliver the block at all was folded into the same counter,
+    // with no file and no bytes, so the one case where the evidence is most
+    // needed was the one case that produced none.
+    //
+    // On 2026-09-26 a solo miner solved a real block and this code could not
+    // send it. The line he saw said "could not submit the block"; the tally
+    // underneath said `rejected`, which is the node's word for something it
+    // never saw. Counted apart now, and loud at the end of the run, because a
+    // lost block is the only outcome here that costs somebody money.
+    std::atomic<uint64_t> lost{0};
+
     // WHERE A SOLUTION GOES, decided once at startup.
     //
     // A worker that has found something must not know whether this miner is
@@ -868,7 +884,8 @@ int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int c
         if (!cookie.empty()) Info("auth     cookie   " + cookie);
     }
 
-    RpcClient   rpc(opt.rpcHost, opt.rpcPort, opt.rpcUser, opt.rpcPass, cookie);
+    RpcClient   rpc(opt.rpcHost, opt.rpcPort, opt.rpcUser, opt.rpcPass, cookie,
+                    opt.network);
     SoloSession solo(rpc, opt.user, NetParamsFor(opt.network), "/wam-miner/");
 
     // Fail before hashing, not after. A wrong address, an unreachable node or
@@ -954,8 +971,32 @@ int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int c
                 LogLine(CLR_DIM, "miner", "the block as sent is in " + path);
             }
         } catch (const std::exception& e) {
-            state.rejected.fetch_add(1);
-            Fail(std::string("could not submit the block: ") + e.what());
+            // NOT `rejected`: the node never saw this one. And the evidence is
+            // written here too -- this is the branch where there is no block
+            // hex to keep, so what is kept is everything needed to rebuild it
+            // by hand: the job, the height, the extranonce2, the nonce and the
+            // exact eighty bytes that were hashed.
+            state.lost.fetch_add(1);
+            Fail(std::string("block ") + std::to_string(job.height) +
+                 " was NOT sent: " + e.what());
+
+            const std::string path = "wam-miner-lost-" +
+                                     std::to_string(job.height) + "-" +
+                                     job.jobId + ".txt";
+            std::ofstream f(path, std::ios::binary);
+            if (f) {
+                f << "height "      << job.height   << "\n"
+                  << "job "         << job.jobId    << "\n"
+                  << "extranonce2 " << ToHex(en2)   << "\n"
+                  << "nonce "       << nonce        << "\n"
+                  << "header "
+                  << (hashedHeader ? ToHex(hashedHeader, 80) : std::string())
+                  << "\n"
+                  << "reason "      << e.what()     << "\n";
+                LogLine(CLR_DIM, "miner",
+                        "what was solved is in " + path +
+                        " -- keep it, it is a block nobody can rebuild later");
+            }
         }
         return false;              // the tip did not move; keep working on it
     };
@@ -998,13 +1039,36 @@ int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int c
             lastStatsAt = now;
             nextStats   = now + 30000;
 
-            char line[200];
+            // FOUND AND ACCEPTED MUST BE READ TOGETHER, AND A GAP MUST SHOUT.
+            //
+            // This line printed "blocks found 1 accepted 0" once every thirty
+            // seconds while a man's block sat unsent, and nothing about it
+            // looked like an emergency. A block found and not accepted is the
+            // most expensive thing this program can produce, so when the two
+            // disagree the line says so in as many words.
+            const uint64_t found = state.blocksFound.load();
+            const uint64_t acc   = state.accepted.load();
+            const uint64_t lst   = state.lost.load();
+            const uint64_t rej   = state.rejected.load();
+
+            char line[320];
             std::snprintf(line, sizeof(line),
                           "%.0f H/s  height %" PRId64 "  blocks found %llu  accepted %llu",
                           rate, solo.Current().job.height,
-                          (unsigned long long)state.blocksFound.load(),
-                          (unsigned long long)state.accepted.load());
+                          (unsigned long long)found, (unsigned long long)acc);
             Info(line);
+
+            if (found > acc) {
+                char warn[320];
+                std::snprintf(warn, sizeof(warn),
+                              "%llu block(s) found have NOT been accepted: "
+                              "%llu not sent, %llu refused by the node. "
+                              "That is real money; do not leave it running.",
+                              (unsigned long long)(found - acc),
+                              (unsigned long long)lst,
+                              (unsigned long long)rej);
+                Warn(warn);
+            }
         }
 
         // --blocks: stop once the node has accepted that many. `accepted` and
@@ -1029,6 +1093,19 @@ int RunSolo(const Options& opt, RandomXEngine& engine, SharedState& state, int c
         Fail("stopped with " + std::to_string(state.accepted.load()) +
              " accepted block(s), asked for " +
              std::to_string(opt.stopAfterBlocks));
+        return 1;
+    }
+
+    // A RUN THAT LOST A BLOCK HAS FAILED, EVEN IF IT ALSO SUCCEEDED.
+    //
+    // Without this, a gate that asks for two blocks and gets two accepted and
+    // one lost exits 0, and the lost one is a line in a log nobody reads. The
+    // defect that took a real block on 2026-09-26 would have passed such a
+    // gate on any run lucky enough to also land two.
+    if (state.lost.load() > 0) {
+        Fail(std::to_string(state.lost.load()) +
+             " solved block(s) were never sent to the node. Each one is a "
+             "block this machine earned and did not get.");
         return 1;
     }
     return 0;

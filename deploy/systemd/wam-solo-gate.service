@@ -1,0 +1,40 @@
+# ===========================================================================
+#  wam-solo-gate -- prove daily that a solved block still reaches a node
+# ===========================================================================
+#
+#  The build gate proves a block can be BUILT: --check asks the node whether
+#  the block it just constructed would be accepted, and hashes nothing. It
+#  cannot prove the block is ever delivered, and on 2026-09-26 delivery was
+#  what was broken -- a man solved height 7838 and the miner discarded it.
+#
+#  This mines two blocks for real on a private regtest chain, with the
+#  binaries that are actually installed on this machine, and requires the
+#  node to accept both. On our own hardware, never in CI: mining on a hosted
+#  build service is against the terms of every one of them.
+#
+#  It is a few seconds of one core on a throwaway chain whose difficulty is
+#  the lowest the consensus rules allow.
+# ===========================================================================
+[Unit]
+Description=Prove that a solved block still reaches the node
+Documentation=https://github.com/wamcoin-core-dev/wam-coin/blob/main/scripts/solo_gate.sh
+OnFailure=wam-alert@%n.service
+
+[Service]
+Type=oneshot
+Environment=HOME=/root
+WorkingDirectory=/opt/wam
+ExecStart=/usr/bin/bash /opt/wam/scripts/solo_gate.sh /opt/wam-current-bin
+
+# It writes its own alarm where the ops panel already counts them, and
+# removes it again when the next run passes.
+ReadWritePaths=/var/lib/wam-reorg
+NoNewPrivileges=yes
+ProtectHome=read-only
+PrivateTmp=yes
+
+# Never at the expense of the chain. This machine serves a node and a miner;
+# a gate that slows either of them would be bought at the wrong price.
+Nice=19
+IOSchedulingClass=idle
+CPUQuota=100%
